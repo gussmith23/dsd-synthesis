@@ -4,35 +4,41 @@
 \usepackage{parskip}
 
 \begin{document}
-\title{Applying Program Synthesis to DNA Strand Displacement}
+\title{Program Synthesis for DNA Strand Displacement}
 \author{Kendall Stewart, Martin Kellogg, Anthony Ha}
 
 \maketitle
 
-DNA Computing is a research area that seeks to leverage the chemical properties
-of DNA molecules as a computational substrate. DNA computing is an appealing
-idea for many reasons: from a medical perspective, it would enable the
-construction of complex devices at a cellular scale, enabling more precise
+DNA computing seeks to leverage the chemical properties
+of DNA molecules as a computational substrate.
+From a medical perspective, DNA computing can enable the
+construction of complex devices at a cellular scale for more precise
 diagnostic tests or drug delivery. From a computer architecture perspective,
 DNA is capable of performing massively parallel computations with very low
 power consumption.
 
-The feasibility of DNA computing was first demonstrated by a DNA-based encoding
-of the Hamiltonian Path Problem~\cite{adelman}. This encoding was constructed by
+The feasibility of DNA computing was first demonstrated by encoding
+the Hamiltonian Path Problem into DNA~\cite{adelman}.
+This encoding was constructed by
 hand, but recent work has advanced DNA strand displacement
-reactions~\cite{strands} as a primitive for DNA computation, in particular
-because these reactions are capable of implementing boolean logic gates.
+reactions~\cite{strands} as a primitive for DNA computation. In particular,
+strand displacement reactions can be used to implement boolean logic gates,
+allowing them to simulate traditional silicon-based computers.
 
 The boolean completeness of strand displacement reactions allows them to be
-targeted by a compiler that knows how to translate arithmetic operations to
-boolean circuits, and then to strand displacement reactions. This process would
-result in a strand displacement system whose complexity is exponential in the
-size of the problem.
+a conceptual ''machine code'' for DNA computing. An assembler-analogue
+can convert boolean gates into strand displacement reactions, allowing
+programs for DNA-based machines to be written using traditional languages.
+However, translating from boolean gates to stand displacement reactions
+results in a strand displacement system whose complexity is exponential in the
+size of the problem (as expressed in boolean gates). This exponential blowup
+prevents this technique from scaling to large systems.
 
-Because strand displacement reactions are capable of more than just boolean
-logic, an operation could potentially be implemented with a set of fewer, more
+However, strand displacement reactions are capable of more than just boolean
+logic. An operation could be implemented with a set of fewer, more
 complex strand displacement gates, but reasoning about the behavior of more
-complex reactions is difficult. We hypothesize that a program synthesis tool
+complex reactions is difficult for humans.
+We hypothesize that a program synthesis tool
 equipped with appropriate semantics for strand displacement reactions could
 ``discover" gates that would be difficult for a human to find.
 
@@ -59,12 +65,14 @@ queries such as ``given reactant $A$ and reactant $B$, find a system of gates
 where the product represents $A \land B$" (where this meaning is derived from
 the graph structure, as described above).
 
-If this is successful, and we have additional time we could move on to more
+If this is successful (and we have additional time), we will move on to more
 complicated queries such as ``given reactants representing number $X$, and
 reactants representing the number $Y$, find a system where the output represents
 $X + Y$".  It is our hypothesis that the resulting systems may be smaller (in
 the number of gates or number of reactions) than systems that are compiled from
-known implementations of boolean circuits. This hypothesis could be tested by
+known implementations of boolean circuits, because the solver will be able
+to take advantage of the special properties of strand displacement reactions.
+This hypothesis can be tested by
 encoding it as additional constraints for the synthesis problem.
 
 To summarize, our proposed timeline of work for the rest of the term is as

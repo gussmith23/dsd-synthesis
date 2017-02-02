@@ -1,5 +1,6 @@
 all:
-	pdflatex proposal
+	pdflatex proposal.tex
+	pdflatex proposal.tex
 
 clean:
 	rm *.aux *.log *.pdf
