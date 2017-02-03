@@ -17,30 +17,27 @@ diagnostic tests or drug delivery. From a computer architecture perspective,
 DNA is capable of performing massively parallel computations with very low
 power consumption.
 
-The feasibility of DNA computing was first demonstrated by encoding
-the Hamiltonian Path Problem into DNA~\cite{adelman}.
-This encoding was constructed by
-hand, but recent work has advanced DNA strand displacement
-reactions~\cite{strands} as a primitive for DNA computation. In particular,
-strand displacement reactions can be used to implement boolean logic gates,
-allowing them to simulate traditional silicon-based computers.
+The feasibility of DNA computing was first demonstrated by encoding the
+Hamiltonian Path Problem into DNA~\cite{adelman}. This encoding was constructed
+by hand, but recent work has advanced DNA strand displacement reactions as a
+primitive for DNA computation, because they are capable of implementing a wide
+range of algorithms and devices, including boolean circuits~\cite{strands},
+oscillators~\cite{dsd}, and neural networks~\cite{strandnn}.
 
-The boolean completeness of strand displacement reactions allows them to be
-a conceptual ``machine code" for DNA computing. An assembler-analogue
-can convert boolean gates into strand displacement reactions, allowing
-programs for DNA-based machines to be written using traditional languages.
-However, translating from boolean gates to stand displacement reactions
-results in a strand displacement system whose complexity is exponential in the
-size of the problem (as expressed in boolean gates). This exponential blowup
-prevents this technique from scaling to large systems.
+Because of their boolean completeness, strand displacement reactions are
+theoretically capable of implementing binary arithmetic operations. However,
+some operations (such as multiplication) require a large number of
+boolean gates, and strand-based boolean gates do not scale as well as
+silicon-based gates; even moderately sized systems begin to suffer noise
+from unwanted interactions.
 
-However, strand displacement reactions are capable of more than just boolean
-logic. An operation could be implemented with a set of fewer, more
-complex strand displacement gates, but reasoning about the behavior of more
-complex reactions is difficult for humans.
-We hypothesize that a program synthesis tool
-equipped with appropriate semantics for strand displacement reactions could
-``discover" gates that would be difficult for a human to find.
+Because strand displacement reactions are capable of more than just boolean
+logic, an arithmetic operation could potentially be implemented with a set of
+fewer, more complex strand displacement gates. However, reasoning about the
+behavior of more complex reactions is difficult for humans. We hypothesize that
+a program synthesis tool equipped with appropriate semantics for strand
+displacement reactions could ``discover" gates that would be difficult for a
+human to find.
 
 A formal semantics for strand displacement reactions is provided in the
 description of DSD~\cite{dsd}, a programming language for specifying and
@@ -111,6 +108,10 @@ Nature Chemistry, vol. 3, no. 2, pp. 103–113, Feb. 2011.
 M. R. Lakin, S. Youssef, L. Cardelli, and A. Phillips,
 “Abstractions for DNA circuit design,”
 Journal of The Royal Society Interface, vol. 9, no. 68, Jul. 2011.
+
+\bibitem{strandnn}
+L. Qian, E. Winfree, and J. Bruck, “Neural network computation with DNA strand
+displacement cascades,” Nature, vol. 475, no. 7356, pp. 368–372, Jul. 2011.
 
 \end{thebibliography}
 
