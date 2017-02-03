@@ -20,7 +20,7 @@ power consumption.
 The feasibility of DNA computing was first demonstrated by encoding the
 Hamiltonian Path Problem into DNA~\cite{adelman}. This encoding was constructed
 by hand, but recent work has advanced DNA strand displacement reactions as a
-primitive for DNA computation, because they are capable of implementing a wide
+primitive for DNA computation, because it can implement a wide
 range of algorithms and devices, including boolean circuits~\cite{strands},
 oscillators~\cite{dsd}, and neural networks~\cite{strandnn}.
 
@@ -28,11 +28,11 @@ Because of their boolean completeness, strand displacement reactions are
 theoretically capable of implementing binary arithmetic operations. However,
 some operations (such as multiplication) require a large number of
 boolean gates, and strand-based boolean gates do not scale as well as
-silicon-based gates; even moderately sized systems begin to suffer noise
+silicon-based gates; even moderately-sized systems begin to suffer noise
 from unwanted interactions.
 
 Because strand displacement reactions are capable of more than just boolean
-logic, an arithmetic operation could potentially be implemented with a set of
+logic, an arithmetic operation can be implemented with a set of
 fewer, more complex strand displacement gates. However, reasoning about the
 behavior of more complex reactions is difficult for humans. We hypothesize that
 a program synthesis tool equipped with appropriate semantics for strand
@@ -51,7 +51,7 @@ are used to simulate the strand displacement system.
 Ignoring rates, the structure of the unweighted reaction graph encodes
 conditions that are necessary (but not sufficient) for some product to have a
 particular meaning. For instance, if all paths leading to a product include both
-initial species $A$ and initial species $B$, the product could potentially
+initial species $A$ and initial species $B$, the product could
 represent $A \land B$.
 
 As a first pass at applying program synthesis to DNA strand displacement, we
@@ -62,7 +62,7 @@ queries such as ``given reactant $A$ and reactant $B$, find a system of gates
 where the product represents $A \land B$" (where this meaning is derived from
 the graph structure, as described above).
 
-If this is successful (and we have additional time), we will move on to more
+If this succeeds (and we have additional time), we will move on to more
 complicated queries such as ``given reactants representing number $X$, and
 reactants representing the number $Y$, find a system where the output represents
 $X + Y$".  It is our hypothesis that the resulting systems may be smaller (in
