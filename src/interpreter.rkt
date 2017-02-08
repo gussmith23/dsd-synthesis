@@ -5,18 +5,35 @@
 (struct state (Is Os) #:transparent)
 (define empty-state (state '() '()))
 
-(define (∪ l1 l2) (remove-duplicates (append l1 l2)))
+(define (union l1 l2) (remove-duplicates (append l1 l2)))
 
 ; Table 7 from supplementary material (saturating mode)
-(define (⊕ I T)
+; compile: ([species]|species, state) -> state
+(define (compile I T)
   (let ([Is (state-Is T)]
         [Os (state-Os T)])
     (cond
-      [ (list? I) (foldr ⊕ T I) ]
+      [ (list? I) (foldr compile T I) ]
       [ (member I Is) T ]
       [ else
-        (let ([Os′ (reactions I Is)])
-          (⊕ (products Os′) (state (∪ Is (list I)) (∪ Os Os′))))])))
+        (let ([Os-prime (reactions I Is)])
+          (compile (products Os-prime) (state (union Is (list I)) (union Os Os-prime))))])))
+
+; -- upper case or parens for terminals
+; domain  := S
+;          | domain S
+;          | epsilon
+;
+; strand  := U domain
+;          | L domain
+;
+; gate    := strand strand domain strand strand
+;          | (:)  gate gate
+;          | (::) gate gate
+;
+; species := strand | gate
+;
+; system  := species | (|) system system
 
 ; placeholders
 (define (reactions I Is) '())
