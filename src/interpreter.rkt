@@ -20,14 +20,19 @@
           (compile (products Os-prime) (state (union Is (list I)) (union Os Os-prime))))])))
 
 ; -- upper case or parens for terminals
-; domain  := S
-;          | domain S
-;          | epsilon
+; id := name
+; sequence := S id | T id | C sequence
 ;
-; strand  := U domain
-;          | L domain
+; domain  := sequence
+;          | domain sequence
+;          | ϵ
 ;
-; gate    := strand strand domain strand strand
+; upper   := U domain
+; lower   := L domain
+;
+; strand  := upper | lower
+;
+; gate    := upper lower domain lower upper
 ;          | (:)  gate gate
 ;          | (::) gate gate
 ;
@@ -35,6 +40,29 @@
 ;
 ; system  := species | (|) system system
 
+; reactions : (species, [species]) -> [species]
+(define (reactions species species-list)
+  (union (unary-reactions species) (binary-reactions species species-list)))
+
+; unary-reactions : species -> [species]
+(define (unary-reactions species)
+  (match species
+    ; Rule RU
+    [ `(gate (U ,lu) (L ,ll) (T ,n) (L ,rl) (U ,ru))
+      (normalize (list `(U ,lu (T ,n) ,ru) `(L ,ll (C (T ,n)) ,rl))) ]
+
+    ; Rule RGA2
+    [ `(: ,g (gate (U ,l) (L ϵ) ,s (L ,rl) (U ,ru)))
+      (match (unary-reactions g)
+        [ (list `(U ,s2) `(L ,s1)) (normalize (list `(gate (U ,l) (L ,s1) ,s (L ,rl) (U ,ru)) `(U ,s2))) ]
+        [ _ (list species) ] )]
+     
+    [ _ (list species) ]
+  ))
+
+(define (normalize a) a)
+
+(define (binary-reactions a b) '())
+
 ; placeholders
-(define (reactions I Is) '())
 (define (products reacts) '())
