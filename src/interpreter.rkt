@@ -19,26 +19,27 @@
         (let ([Os-prime (reactions I Is)])
           (compile (products Os-prime) (state (union Is (list I)) (union Os Os-prime))))])))
 
-; -- upper case or parens for terminals
-; id := name
-; sequence := S id | T id | C sequence
+; <id>       := NAME
 ;
-; domain  := sequence
-;          | domain sequence
-;          | ϵ
+; <sequence> := (S <id>)
+;             | (T <id>)
+;             | (C S <id>)
+;             | (C T <id>)
 ;
-; upper   := U domain
-; lower   := L domain
+; <domain>   := (<sequence>*)
 ;
-; strand  := upper | lower
+; <upper>    := (U domain)
+; <lower>    := (L domain)
 ;
-; gate    := upper lower domain lower upper
-;          | (:)  gate gate
-;          | (::) gate gate
+; <strand>   := upper
+;             | lower
 ;
-; species := strand | gate
+; <gate>     := (gate <upper> <lower> <domain> <lower> <upper>)
 ;
-; system  := species | (|) system system
+; <species>  := <strand>
+;             | <gate>
+;
+; <system>   := (<species>+)
 
 ; reactions : (species, [species]) -> [species]
 (define (reactions species species-list)
