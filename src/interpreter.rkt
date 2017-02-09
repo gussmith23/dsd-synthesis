@@ -60,9 +60,20 @@
     [ _ (list species) ]
   ))
 
+(module+ test
+  (require rackunit)
+  ; basic smoke test for unary reactions
+  (check-equal? (list `(T a)) (unary-reactions `(T a)))
+  ; basic RU
+  (check-equal?
+   (unary-reactions `(gate (U l-prime) (L l) (T n) (L r) (U r-prime)))
+   (list `(U l-prime (T n) r-prime) `(L l (C (T n)) r))) 
+ )
+
 (define (normalize a) a)
 
 (define (binary-reactions a b) '())
 
 ; placeholders
 (define (products reacts) '())
+
