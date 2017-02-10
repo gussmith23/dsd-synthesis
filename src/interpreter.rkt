@@ -54,6 +54,10 @@
     [ `(gate (U (,lu)) (L (,ll)) ((T ,n)) (L (,rl)) (U (,ru)))
       (normalize (list `(U (,lu (T ,n) ,ru)) `(L (,ll (C (T ,n)) ,rl)))) ]
 
+    ; Rule RC
+    [ `(gate (U ,lu) (L ,ll) (,s) (L ( (C (T ,n)) ,rl) ) (U ((T ,n) ,ru)))
+      (normalize (list `(gate (U ,lu) (L ,ll) (,s (T ,n)) (L (,rl)) (U (,ru)) ) )) ]
+
     ; Rule RGA2
     [ `(: ,g (gate (U ,l) (L ϵ) ,s (L ,rl) (U ,ru)))
       (match (unary-reactions g)
@@ -90,6 +94,10 @@
   (check-equal?
    (unary-reactions basic-RU-input)
    basic-RU-output)
+  ; basic RC
+  (check-equal?
+   (unary-reactions (string->species "<l>{l'}[s]{n^* r'}<n^ r>"))
+   (normalize (list (string->species "<l>{l'}[s n^]{r'}<r>"))))
  )
 
 (define (normalize a) a)
