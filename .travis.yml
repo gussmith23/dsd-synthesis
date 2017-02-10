@@ -60,6 +60,7 @@ before_script:
 # Tip: Use `raco pkg install --deps search-auto <pkg>` to install any
 # required packages without getting stuck on a confirmation prompt.
 script:
+  - raco pkg install rosette
   - raco make src/interpreter.rkt
   - raco test -x .
 
