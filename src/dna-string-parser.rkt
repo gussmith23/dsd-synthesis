@@ -34,7 +34,7 @@
                              `(T ,symbol)
                              `(S ,symbol)))
     (if is-complement
-        (cons `C inner-result)
+        `(C ,inner-result)
         inner-result)
     ))
 

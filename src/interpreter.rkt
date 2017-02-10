@@ -23,8 +23,8 @@
 ;
 ; <sequence> := (S <id>)
 ;             | (T <id>)
-;             | (C S <id>)
-;             | (C T <id>)
+;             | (C (S <id>))
+;             | (C (T <id>))
 ;
 ; <domain>   := (<sequence>*)
 ;

@@ -19,8 +19,8 @@
 ;
 ; <sequence> := (S <id>)
 ;             | (T <id>)
-;             | (C S <id>)
-;             | (C T <id>)
+;             | (C (S <id>))
+;             | (C (T <id>))
 ;
 ; <domain>   := (<sequence>*)
 ;
@@ -45,8 +45,8 @@
   (match input
     [`(S ,id) (id? id)]
     [`(T ,id) (id? id)]
-    [`(C S ,id) (id? id)]
-    [`(C T ,id) (id? id)]
+    [`(C (S ,id)) (id? id)]
+    [`(C (T ,id)) (id? id)]
     [_ #f]))
 
 (define (domain? input)
