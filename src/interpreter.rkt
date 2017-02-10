@@ -65,12 +65,31 @@
 
 (module+ test
   (require rackunit)
+  (require "dna-syntax.rkt")
+  (require "dna-string-parser.rkt")
+
+  ; define test inputs and outputs
+  (define single-toehold (string->species "<a^>"))
+  (define basic-RU-input (string->species "<l>{l'}[n^]{r'}<r>"))
+  (define basic-RU-output (normalize (list (string->species "<l n^ r>")
+                                           (string->species "{l' n^* r'}"))))
+
+  ; basic parser tests which see if all parses are species
+  (check-equal?
+   (species? basic-RU-input)
+   #t)
+  (check-equal?
+   (andmap species? basic-RU-output)
+   #t)
+  
   ; basic smoke test for unary reactions
-  (check-equal? (list `(T a)) (unary-reactions `(T a)))
+  (check-equal?
+   (unary-reactions single-toehold)
+   (list single-toehold))
   ; basic RU
   (check-equal?
-   (unary-reactions `(gate (U l-prime) (L l) (T n) (L r) (U r-prime)))
-   (list `(U l-prime (T n) r-prime) `(L l (C (T n)) r))) 
+   (unary-reactions basic-RU-input)
+   basic-RU-output)
  )
 
 (define (normalize a) a)
