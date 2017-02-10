@@ -35,6 +35,8 @@
 ;             | lower
 ;
 ; <gate>     := (gate <upper> <lower> <domain> <lower> <upper>)
+;             | (: <gate> <gate>)
+;             | (:: <gate> <gate>)
 ;
 ; <species>  := <strand>
 ;             | <gate>
