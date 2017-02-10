@@ -51,8 +51,8 @@
 (define (unary-reactions species)
   (match species
     ; Rule RU
-    [ `(gate (U ,lu) (L ,ll) (T ,n) (L ,rl) (U ,ru))
-      (normalize (list `(U ,lu (T ,n) ,ru) `(L ,ll (C (T ,n)) ,rl))) ]
+    [ `(gate (U (,lu)) (L (,ll)) ((T ,n)) (L (,rl)) (U (,ru)))
+      (normalize (list `(U (,lu (T ,n) ,ru)) `(L (,ll (C (T ,n)) ,rl)))) ]
 
     ; Rule RGA2
     [ `(: ,g (gate (U ,l) (L ϵ) ,s (L ,rl) (U ,ru)))
