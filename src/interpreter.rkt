@@ -110,10 +110,39 @@
 
     ))
 
+
+(define-symbolic a b c x y z integer?)
+(define-symbolic at bt ct xt yt zt boolean?)
+(define a. (if at (toehold a) (domain a)))
+(define b. (if bt (toehold b) (domain b)))
+(define c. (if ct (toehold c) (domain c)))
+(define x. (if xt (complement (toehold x)) (domain x)))
+(define y. (if yt (complement (toehold y)) (domain y)))
+(define z. (if zt (complement (toehold z)) (domain z)))
+
+(define upper (upper-strand (list a. b. c.)))
+(define lower (lower-strand (list a. b. c.)))
+
+(define (in y xs)
+  (match xs
+    [ (cons x xs)
+      (if (equal? x y) #t (in y xs)) ]
+    [ '() #f ]))
+
+(define (rb-check)
+  (assert
+   (=>
+    (and (in (toehold 0) (upper-strand-domain-list upper))
+         (in (complement (toehold 0)) (lower-strand-domain-list lower)))
+    (gate? (car (binary-reactions upper lower))))))
+
 (module+ test
   (require rackunit)
   (require "dna-syntax.rkt")
   (require "dna-string-parser.rkt")
+
+  ; check with verification!
+  (check-equal? (verify (rb-check)) (unsat))
 
   ; define test inputs and outputs
   (define single-toehold (string->species "<a^>"))
