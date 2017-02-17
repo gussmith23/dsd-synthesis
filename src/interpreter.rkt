@@ -19,30 +19,6 @@
         (let ([Os-prime (reactions I Is)])
           (compile (products Os-prime) (state (union Is (list I)) (union Os Os-prime))))])))
 
-; <id>       := NAME
-;
-; <sequence> := (S <id>)
-;             | (T <id>)
-;             | (C (S <id>))
-;             | (C (T <id>))
-;
-; <domain>   := (<sequence>*)
-;
-; <upper>    := (U domain)
-; <lower>    := (L domain)
-;
-; <strand>   := upper
-;             | lower
-;
-; <gate>     := (gate <upper> <lower> <domain> <lower> <upper>)
-;             | (: <gate> <gate>)
-;             | (:: <gate> <gate>)
-;
-; <species>  := <strand>
-;             | <gate>
-;
-; <system>   := (<species>+)
-
 ; reactions : (species, [species]) -> [species]
 (define (reactions species species-list)
   (union (unary-reactions species) (binary-reactions species species-list)))
@@ -66,6 +42,73 @@
      
     [ _ (list species) ]
   ))
+
+
+(struct domain (id) #:transparent)
+(struct toehold (id) #:transparent)
+(struct complement (domain) #:transparent)
+(struct upper-strand (domain-list) #:transparent)
+(struct lower-strand (domain-list) #:transparent)
+(struct duplex-strand (domain-list) #:transparent)
+(struct gate (left-upper left-lower duplex right-lower right-upper) #:transparent)
+(struct gate: (g1 g2) #:transparent)
+(struct gate:: (g1 g2) #:transparent)
+
+(define (toe-search s1 s2) (toe-search-aux s1 s2 '() '()))
+
+(define (toe-search-aux s1 s2 acc1 acc2)
+  (match* (s1 s2)
+
+    ; two domain lists
+    [ ((cons d1 rest-s1) (cons d2 rest-s2))
+      (match* (d1 d2)
+
+        ; heads are toeholds
+        [ ((toehold a) (complement (toehold b)))
+
+          (if
+           (equal? a b)
+           ; heads are matching toeholds
+           (list
+            (list (reverse acc1) (toehold a) rest-s1)
+            (list (reverse acc2) (complement (toehold a)) rest-s2))
+           ; not matching toeholds
+           (toe-search-aux s1 rest-s2 acc1 (cons d2 acc2))) ]
+
+        ; search through second list
+        [ (_ d2)
+          (toe-search-aux s1 rest-s2 acc1 (cons d2 acc2)) ])]
+
+    ; end of second list
+    [ ((cons d1 rest-s1) '())
+      ; restart through second list with next entry in first list
+      (toe-search-aux rest-s1 (reverse acc2) (cons d1 acc1) '()) ]
+
+    ; end of first list -- nothing found
+    [ ( '() _ ) '() ]))
+
+
+(define (binary-reactions s1 s2)
+  (match* (s1 s2)
+    ; rule rb
+    [ ((upper-strand upper-domains) (lower-strand lower-domains))
+      (match (toe-search upper-domains lower-domains)
+        [ '() (list s1 s2) ]
+        [ (list (list lu (toehold n) ru) (list ll _ rl))
+          (list (gate (upper-strand lu) (lower-strand ll) (duplex-strand (list (toehold n))) (lower-strand rl) (upper-strand ru))) ] )]
+
+    ;rule rga1
+    [ ((gate lu s1 s rl ru) (upper-strand s2))
+
+      (match (binary-reactions (upper-strand s2) s1)
+        [ (list result)
+          (if (gate? result)
+              (list (gate: result (gate lu (lower-strand '()) s rl ru)))
+              result) ])]
+
+    [ (s1 s2) (list s1 s2) ]
+
+    ))
 
 (module+ test
   (require rackunit)
@@ -102,7 +145,6 @@
 
 (define (normalize a) a)
 
-(define (binary-reactions a b) '())
 
 ; placeholders
 (define (products reacts) '())
