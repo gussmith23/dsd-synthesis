@@ -1,6 +1,7 @@
 #lang rosette/safe
 
 (require rosette/lib/match)
+(require rosette/lib/synthax)
 
 (struct state (Is Os) #:transparent)
 (define empty-state (state '() '()))
@@ -111,17 +112,20 @@
     ))
 
 
-(define-symbolic a b c x y z integer?)
-(define-symbolic at bt ct xt yt zt boolean?)
-(define a. (if at (toehold a) (domain a)))
-(define b. (if bt (toehold b) (domain b)))
-(define c. (if ct (toehold c) (domain c)))
-(define x. (if xt (complement (toehold x)) (domain x)))
-(define y. (if yt (complement (toehold y)) (domain y)))
-(define z. (if zt (complement (toehold z)) (domain z)))
+(define-synthax (domain-cat k)
+  #:base
+  '()
+  #:else
+  (cons
+   (choose
+    (toehold (??))
+    (complement (toehold (??)))
+    (domain (??))
+    (complement (domain (??))))
+   (domain-cat (- k 1))))
 
-(define upper (upper-strand (list a. b. c.)))
-(define lower (lower-strand (list a. b. c.)))
+(define upper (upper-strand (domain-cat 3)))
+(define lower (lower-strand (domain-cat 3)))
 
 (define (in y xs)
   (match xs
@@ -129,12 +133,11 @@
       (if (equal? x y) #t (in y xs)) ]
     [ '() #f ]))
 
-(define (rb-check)
-  (assert
-   (=>
-    (and (in (toehold 0) (upper-strand-domain-list upper))
-         (in (complement (toehold 0)) (lower-strand-domain-list lower)))
-    (gate? (car (binary-reactions upper lower))))))
+(define (rb-check upper lower)
+  (=>
+   (and (in (toehold 0) (upper-strand-domain-list upper))
+        (in (complement (toehold 0)) (lower-strand-domain-list lower)))
+   (gate? (car (binary-reactions upper lower)))))
 
 (module+ test
   (require rackunit)
@@ -142,7 +145,9 @@
   (require "dna-string-parser.rkt")
 
   ; check with verification!
-  (check-equal? (verify (rb-check)) (unsat))
+  (check-equal?
+   (solve (assert (not (rb-check upper lower))))
+   (unsat))
 
   ; define test inputs and outputs
   (define single-toehold (string->species "<a^>"))
