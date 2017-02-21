@@ -3,6 +3,9 @@
 (require rosette/lib/match)
 (require rosette/lib/synthax)
 
+(require "dna-syntax.rkt")
+(require "reduction-rules.rkt")
+
 (struct state (Is Os) #:transparent)
 (define empty-state (state '() '()))
 
@@ -26,128 +29,37 @@
 
 ; unary-reactions : species -> [species]
 (define (unary-reactions species)
-  (match species
-    ; Rule RU
-    [ `(gate (U (,lu)) (L (,ll)) ((T ,n)) (L (,rl)) (U (,ru)))
-      (normalize (list `(U (,lu (T ,n) ,ru)) `(L (,ll (C (T ,n)) ,rl)))) ]
-
-    ; Rule RC
-    [ `(gate (U ,lu) (L ,ll) (,s) (L ( (C (T ,n)) ,rl) ) (U ((T ,n) ,ru)))
-      (normalize (list `(gate (U ,lu) (L ,ll) (,s (T ,n)) (L (,rl)) (U (,ru)) ) )) ]
-
-    ; Rule RGA2
-    [ `(: ,g (gate (U ,l) (L ϵ) ,s (L ,rl) (U ,ru)))
-      (match (unary-reactions g)
-        [ (list `(U ,s2) `(L ,s1)) (normalize (list `(gate (U ,l) (L ,s1) ,s (L ,rl) (U ,ru)) `(U ,s2))) ]
-        [ _ (list species) ] )]
-     
-    [ _ (list species) ]
-  ))
-
-
-(struct domain (id) #:transparent)
-(struct toehold (id) #:transparent)
-(struct complement (domain) #:transparent)
-(struct upper-strand (domain-list) #:transparent)
-(struct lower-strand (domain-list) #:transparent)
-(struct duplex-strand (domain-list) #:transparent)
-(struct gate (left-upper left-lower duplex right-lower right-upper) #:transparent)
-(struct gate: (g1 g2) #:transparent)
-(struct gate:: (g1 g2) #:transparent)
-
-(define (toe-search s1 s2) (toe-search-aux s1 s2 '() '()))
-
-(define (toe-search-aux s1 s2 acc1 acc2)
-  (match* (s1 s2)
-
-    ; two domain lists
-    [ ((cons d1 rest-s1) (cons d2 rest-s2))
-      (match* (d1 d2)
-
-        ; heads are toeholds
-        [ ((toehold a) (complement (toehold b)))
-
-          (if
-           (equal? a b)
-           ; heads are matching toeholds
-           (list
-            (list (reverse acc1) (toehold a) rest-s1)
-            (list (reverse acc2) (complement (toehold a)) rest-s2))
-           ; not matching toeholds
-           (toe-search-aux s1 rest-s2 acc1 (cons d2 acc2))) ]
-
-        ; search through second list
-        [ (_ d2)
-          (toe-search-aux s1 rest-s2 acc1 (cons d2 acc2)) ])]
-
-    ; end of second list
-    [ ((cons d1 rest-s1) '())
-      ; restart through second list with next entry in first list
-      (toe-search-aux rest-s1 (reverse acc2) (cons d1 acc1) '()) ]
-
-    ; end of first list -- nothing found
-    [ ( '() _ ) '() ]))
-
+  (map normalize
+       (append
+        (list species)
+        (rule-ru species)
+        (rule-rc species)
+        ; TODO: rule-rm
+        (rule-rd species)
+        (rule-rga2 species)
+        ; TODO: rule-rgu
+        ; TODO: rule-rg
+        ; TODO: rule-rv
+        ; TODO: rule-rc
+        ; TODO: rule-re
+        )))
 
 (define (binary-reactions s1 s2)
-  (match* (s1 s2)
-    ; rule rb
-    [ ((upper-strand upper-domains) (lower-strand lower-domains))
-      (match (toe-search upper-domains lower-domains)
-        [ '() (list s1 s2) ]
-        [ (list (list lu (toehold n) ru) (list ll _ rl))
-          (list (gate (upper-strand lu) (lower-strand ll) (duplex-strand (list (toehold n))) (lower-strand rl) (upper-strand ru))) ] )]
 
-    ;rule rga1
-    [ ((gate lu s1 s rl ru) (upper-strand s2))
-
-      (match (binary-reactions (upper-strand s2) s1)
-        [ (list result)
-          (if (gate? result)
-              (list (gate: result (gate lu (lower-strand '()) s rl ru)))
-              result) ])]
-
-    [ (s1 s2) (list s1 s2) ]
-
-    ))
-
-
-(define-synthax (domain-cat k)
-  #:base
-  '()
-  #:else
-  (cons
-   (choose
-    (toehold (??))
-    (complement (toehold (??)))
-    (domain (??))
-    (complement (domain (??))))
-   (domain-cat (- k 1))))
-
-(define upper (upper-strand (domain-cat 3)))
-(define lower (lower-strand (domain-cat 3)))
-
-(define (in y xs)
-  (match xs
-    [ (cons x xs)
-      (if (equal? x y) #t (in y xs)) ]
-    [ '() #f ]))
-
-(define (rb-check upper lower)
-  (=>
-   (and (in (toehold 0) (upper-strand-domain-list upper))
-        (in (complement (toehold 0)) (lower-strand-domain-list lower)))
-   (gate? (car (binary-reactions upper lower)))))
+  (map normalize
+       (append
+        (list s1 s2)
+        (rule-rb s1 s2)
+        (rule-rga1 s1 s2)
+        ; TODO: rule-rgb
+        ; TODO: rule-rgl
+        ; TODO: rule-rp
+        )))
 
 (module+ test
   (require rackunit)
   (require "dna-syntax.rkt")
   (require "dna-string-parser.rkt")
-
-  ; check with verification!
-  (check-equal?
-   (solve (assert (not (rb-check upper lower))))
-   (unsat))
 
   ; define test inputs and outputs
   (define single-toehold (string->species "<a^>"))
@@ -157,28 +69,42 @@
 
   ; basic parser tests which see if all parses are species
   (check-equal?
-   (species? basic-RU-input)
+   (valid-dna-struct? basic-RU-input)
    #t)
   (check-equal?
-   (andmap species? basic-RU-output)
+   (andmap valid-dna-struct? basic-RU-output)
    #t)
   
   ; basic smoke test for unary reactions
   (check-equal?
    (unary-reactions single-toehold)
    (list single-toehold))
+
+  (define (check-unary-reaction input output)
+    (let [(actual (unary-reactions input))]
+      (check-not-false
+       (andmap
+        (lambda (expected) member expected actual)
+        output))))
+
   ; basic RU
-  (check-equal?
-   (unary-reactions basic-RU-input)
+  (check-unary-reaction
+   basic-RU-input
    basic-RU-output)
+
   ; basic RC
-  (check-equal?
-   (unary-reactions (string->species "<l>{l'}[s]{n^* r'}<n^ r>"))
+  (check-unary-reaction
+   (string->species "<l>{l'}[s]{n^* r'}<n^ r>")
    (normalize (list (string->species "<l>{l'}[s n^]{r'}<r>"))))
+
+  ; TODO: still have to re-write RM rule
+  ; basic RM
+  ;(check-equal?
+  ;(unary-reactions (string->species "<l>{l'}[s1]<s r2>:<l1>[s s2]{r'}<r>}"))
+  ;(normalize (list (string->species "<l>{l'}[s1 s]<r2>:<l1 s>[s2]{r'}<r>}"))))
  )
 
 (define (normalize a) a)
-
 
 ; placeholders
 (define (products reacts) '())

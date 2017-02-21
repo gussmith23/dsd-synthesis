@@ -1,6 +1,7 @@
 #lang rosette/safe
 
 (require rosette/lib/match)
+(require rosette/lib/synthax)
 
 (provide
  ; domains are toeholds, complements, or ids ('integer?'s)
@@ -16,6 +17,7 @@
                    ;  a valid dna struct is a dna struct (toehold, complement,
                    ;   upper-strand, lower-strand, duplex-strand, gate, gate:, gate::)
                    ;  and the dna struct is constructed only from valid inputs as described above
+ domain-cat-??
 )
 
 ; Checking for equality between ids are all we need to implement
@@ -85,3 +87,17 @@
       (gate-struct? g1) (valid-dna-struct? g1)
       (gate-struct? g2) (valid-dna-struct? g2))]
     [_ #f]))
+
+(define-synthax (domain-cat-?? k)
+  #:base
+  '()
+  #:else
+  (choose
+   '()
+   (cons
+    (choose
+     (??)
+     (complement (??))
+     (toehold (??))
+     (complement (toehold (??))))
+    (domain-cat-?? (- k 1)))))
