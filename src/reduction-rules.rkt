@@ -144,10 +144,10 @@
                    '() )]
 
              ; not potentially complementary
-             [ (t ct) '() ] )]
+             [ (_ _) '() ] )]
 
          ; right upper or right lower are null
-         [ (ru rl) '() ] )]
+         [ (_ _) '() ] )]
 
     ; not a gate
     [ _ '() ] ))
@@ -212,7 +212,7 @@
             (lower-strand rl)
             (upper-strand ru))) ] )]
 
-    [ (s1 s2) '() ] ))
+    [ (_ _) '() ] ))
 
 
 (define (rule-rga1 s1 s2)
@@ -227,7 +227,7 @@
               (gate lu (lower-strand '()) s rl ru)))
             '())) ]
 
-    [ (s1 s2) '() ] ))
+    [ (_ _) '() ] ))
 
 (module+ test
   (require rackunit)
