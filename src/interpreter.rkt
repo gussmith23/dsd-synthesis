@@ -157,10 +157,10 @@
 
   ; basic parser tests which see if all parses are species
   (check-equal?
-   (species? basic-RU-input)
+   (valid-dna-struct? basic-RU-input)
    #t)
   (check-equal?
-   (andmap species? basic-RU-output)
+   (andmap valid-dna-struct? basic-RU-output)
    #t)
   
   ; basic smoke test for unary reactions
