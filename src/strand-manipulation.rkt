@@ -46,24 +46,24 @@
   (match species
     ; Normal form of strands are the upper strands
     [(lower-strand _) (rotate-species species)]
-    
+
     ; Normal forms of gates:
     ; TODO: Decide on canonical rotation first
     ; DONE: Then propogate all shared overhangs as far left as possible
 
     ; Below moves all bottom shared overhangs to the left
     [(gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand R1_) (upper-strand R1))
-            (gate (upper-strand L2) (lower-strand (list shared-overhang L2_rest ...)) (duplex-strand D2) (lower-strand R2_) (upper-strand R2)))
+            (gate (upper-strand L2) (lower-strand (list h t ...)) (duplex-strand D2) (lower-strand R2_) (upper-strand R2)))
      (normalize
-      (gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand (append R1_ (list shared-overhang))) (upper-strand R1))
-             (gate (upper-strand L2) (lower-strand L2_rest) (duplex-strand D2) (lower-strand R2_) (upper-strand R2))))]
+      (gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand (append R1_ (cons h t))) (upper-strand R1))
+             (gate (upper-strand L2) (lower-strand null) (duplex-strand D2) (lower-strand R2_) (upper-strand R2))))]
 
     ; Below moves all top shared overhangs to the left
     [(gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand R1_) (upper-strand R1))
-            (gate (upper-strand (list shared-overhang L2-rest ...)) (lower-strand L2_) (duplex-strand D2) (lower-strand R2_) (upper-strand R2)))
+            (gate (upper-strand (list h t ...)) (lower-strand L2_) (duplex-strand D2) (lower-strand R2_) (upper-strand R2)))
      (normalize
-      (gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand R1_) (upper-strand (append R1 (list shared-overhang))))
-             (gate (upper-strand L2-rest) (lower-strand L2_) (duplex-strand D2) (lower-strand R2_) (upper-strand R2))))]
+      (gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand R1_) (upper-strand (append R1 (cons h t))))
+             (gate (upper-strand null) (lower-strand L2_) (duplex-strand D2) (lower-strand R2_) (upper-strand R2))))]
 
     ; If no more transformations can be applied, the species is in normal form
     [_ species]
@@ -81,6 +81,7 @@
   (check-equal?
    (valid-dna-struct? test-gate-1)
    #t)
+
   (check-equal?
    (valid-dna-struct? expected-output-1)
    #t)
@@ -88,4 +89,5 @@
   (check-equal?
    (normalize test-gate-1)
    expected-output-1)
+
   )
