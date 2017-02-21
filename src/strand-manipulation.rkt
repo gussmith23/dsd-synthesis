@@ -4,64 +4,66 @@
 ; This includes reversing domains, taking the complement of domains,
 ; rotating species, and getting the canonical normal form of species.
 
-(provide reverse-domain
-         complement
+(provide reverse-domain-list
+         complement-of-domain-list
          rotate-species
          normalize)
 
-(require rosette/lib/match)
+(require rosette/lib/match
+         "dna-syntax.rkt")
 
-; Reverses a domain so the sequences are in reverse order
-(define (reverse-domain domain)
-  (reverse domain))
+(define (reverse-domain-list domain-list)
+  (reverse domain-list))
 
-; Takes the complement of the domain so the result is every
-; sequence that was marked complemented is no longer marked and vice-versa
-(define (complement domain)
+(define (complement-of-domain-list domain-list)
   (map (lambda (sequence)
          (match sequence
-           [`(C ,rest ...) rest]
-           [`(,desc ,id) `(C ,desc ,id)]
-           )
-         ) domain))
+           [(complement rest) rest]
+           [_ (complement sequence)]))
+       domain-list))
 
 ; Takes a species and returns the 180 rotation of it
 (define (rotate-species species)
   (match species
-    [`(: ,left-gate ,right-gate) (list `:: (rotate-species right-gate) (rotate-species left-gate))]
-    [`(:: ,left-gate ,right-gate) (list `: (rotate-species right-gate) (rotate-species left-gate))]
-    [`(gate (U (,ul ...)) (L (,ll ...)) (,middle ...) (L (,lr ...)) (U (,ur ...)))
-     (list `gate
-           `(U ,(reverse-domain lr))
-           `(L ,(reverse-domain ur))
-           (reverse-domain (complement middle))
-           `(L ,(reverse-domain ul))
-           `(U ,(reverse-domain ll)))]
-    [`(U (,strand ...)) (list `L (reverse-domain strand))]
-    [`(L (,strand ...)) (list `U (reverse-domain strand))]
+    [(gate: left-gate right-gate) (gate:: (rotate-species right-gate) (rotate-species left-gate))]
+    [(gate:: left-gate right-gate) (gate: (rotate-species right-gate) (rotate-species left-gate))]
+    [(gate (upper-strand ul)
+           (lower-strand ll)
+           (duplex-strand d)
+           (lower-strand lr)
+           (upper-strand ur))
+     (gate (upper-strand (reverse-domain-list lr))
+           (lower-strand (reverse-domain-list ur))
+           (duplex-strand (reverse-domain-list (complement-of-domain-list d)))
+           (lower-strand (reverse-domain-list ul))
+           (upper-strand (reverse-domain-list ll)))]
+    [(upper-strand strand) (lower-strand (reverse-domain-list strand))]
+    [(lower-strand strand) (upper-strand (reverse-domain-list strand))]
     ))
 
 ; Takes a species and returns an equivalent canonical form
 (define (normalize species)
   (match species
     ; Normal form of strands are the upper strands
-    [`(L ,domain) (rotate-species species)]
+    [(lower-strand _) (rotate-species species)]
     
     ; Normal forms of gates:
     ; TODO: Decide on canonical rotation first
     ; DONE: Then propogate all shared overhangs as far left as possible
 
     ; Below moves all bottom shared overhangs to the left
-    [`(: (gate (U ,L1) (L ,L1_) ,S1 (L ,R1_) (U ,R1)) (gate (U ,L2) (L (,S ,L2_rest ...)) ,S2 (L ,R2_) (U ,R2)))
+    [(gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand R1_) (upper-strand R1))
+            (gate (upper-strand L2) (lower-strand (list shared-overhang L2_rest ...)) (duplex-strand D2) (lower-strand R2_) (upper-strand R2)))
      (normalize
-      `(: (gate (U ,L1) (L ,L1_) ,S1 (L ,(append R1_ `(,S))) (U ,R1)) (gate (U ,L2) (L ,L2_rest) ,S2 (L ,R2_) (U ,R2)))
-      )]
+      (gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand (append R1_ (list shared-overhang))) (upper-strand R1))
+             (gate (upper-strand L2) (lower-strand L2_rest) (duplex-strand D2) (lower-strand R2_) (upper-strand R2))))]
 
     ; Below moves all top shared overhangs to the left
-    [`(: (gate (U ,L1) (L ,L1_) ,S1 (L ,R1_) (U ,R1)) (gate (U (,S ,L2rest ...)) (L ,L2_) ,S2 (L ,R2_) (U ,R2)))
+    [(gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand R1_) (upper-strand R1))
+            (gate (upper-strand (list shared-overhang L2-rest ...)) (lower-strand L2_) (duplex-strand D2) (lower-strand R2_) (upper-strand R2)))
      (normalize
-      `(: (gate (U ,L1) (L ,L1_) ,S1 (L ,R1_) (U ,(append R1 `(,S)))) (gate (U ,L2rest) (L ,L2_) ,S2 (L ,R2_) (U ,R2)))
-      )]
+      (gate: (gate (upper-strand L1) (lower-strand L1_) (duplex-strand D1) (lower-strand R1_) (upper-strand (append R1 (list shared-overhang))))
+             (gate (upper-strand L2-rest) (lower-strand L2_) (duplex-strand D2) (lower-strand R2_) (upper-strand R2))))]
 
     ; If no more transformations can be applied, the species is in normal form
     [_ species]
@@ -77,10 +79,10 @@
   (define expected-output-1 (string->species "<L1>{L1b}[S1]{R1b S L2b}<R1 L2>:[S2]{R2b}<R2>"))
 
   (check-equal?
-   (species? test-gate-1)
+   (valid-dna-struct? test-gate-1)
    #t)
   (check-equal?
-   (species? expected-output-1)
+   (valid-dna-struct? expected-output-1)
    #t)
 
   (check-equal?
