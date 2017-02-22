@@ -236,6 +236,11 @@
 (module+ test
   (require rackunit)
 
+  (define (solver-check checker-func args)
+    (define formula (apply checker-func args))
+    (define cex (solve (assert (not (formula)))))
+    (check-equal? cex (unsat)))
+
   (define upper (upper-strand (domain-cat-?? 3)))
   (define lower (lower-strand (domain-cat-?? 3)))
 
@@ -251,9 +256,7 @@
           (in (complement (toehold 0)) (lower-strand-domain-list lower)))
      (gate? (car (rule-rb upper lower)))))
 
-  (check-equal?
-   (unsat)
-   (solve (assert (not (check-rb upper lower)))))
+  (solver-check check-rb (list upper lower))
 
   (define test-gate
     (gate
@@ -277,8 +280,6 @@
      ; then (toehold a) should be and the end of the resulting gate duplex
      (equal? (toehold a) (last (duplex-strand-domain-list (gate-duplex (car (rule-rc g))))))))
 
-  (check-equal?
-   (unsat)
-   (solve (assert (not (check-rc test-gate a)))))
+  (solver-check check-rc (list test-gate a))
   
   )
