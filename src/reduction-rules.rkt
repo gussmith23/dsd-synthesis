@@ -252,10 +252,10 @@
 
   (define (check-rb upper lower)
     (=>
-     (and (in (toehold 0) (upper-strand-domain-list upper))
-          (in (complement (toehold 0)) (lower-strand-domain-list lower)))
      (and (gate? (car (rule-rb upper lower)))
-          (in (toehold 0) (duplex-strand-domain-list (gate-duplex (car (rule-rb upper lower))))))))
+          (in (toehold 0) (duplex-strand-domain-list (gate-duplex (car (rule-rb upper lower))))))
+     (and (in (toehold 0) (upper-strand-domain-list upper))
+          (in (complement (toehold 0)) (lower-strand-domain-list lower)))))
 
   (solver-check check-rb (list upper lower))
 
