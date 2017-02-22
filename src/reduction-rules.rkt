@@ -23,10 +23,14 @@
  ; TODO: rule-rgb
  ; TODO: rule-rgl
  )
- 
 
+; Takes two lists of domains and locates the first pair of matching toeholds.
+; For instance, given (a b c^ d) and (e c* f g h), this function produces (((a b) (c^) (d)) ((e) (c*) (f g h)))
+; That's a list of lists of lists: the outer list contains two lists, each of which contains three lists, which
+; are split around the toehold.
 (define (toe-search s1 s2) (toe-search-aux s1 s2 '() '()))
 
+; Helper function for toe-search. Do not call directly; call toe-search instead.
 (define (toe-search-aux s1 s2 acc1 acc2)
   (match* (s1 s2)
 
