@@ -17,7 +17,9 @@
                    ;  a valid dna struct is a dna struct (toehold, complement,
                    ;   upper-strand, lower-strand, duplex-strand, gate, gate:, gate::)
                    ;  and the dna struct is constructed only from valid inputs as described above
- domain-cat-??
+
+ domain-cat-?? ; a function that takes a length k and returns a symbolic domain list of size up to k
+ gate-??       ; a macro that takes a length k and returns a symbolic gate with each strand being up to size k
 )
 
 ; Checking for equality between ids are all we need to implement
@@ -88,6 +90,11 @@
       (gate-struct? g2) (valid-dna-struct? g2))]
     [_ #f]))
 
+; Synthesis definitions
+(define (id-hole)
+  (define-symbolic* id integer?)
+  id)
+
 (define-synthax (domain-cat-?? k)
   #:base
   '()
@@ -96,8 +103,15 @@
    '()
    (cons
     (choose
-     (??)
-     (complement (??))
-     (toehold (??))
-     (complement (toehold (??))))
+     (id-hole)
+     (complement (id-hole))
+     (toehold (id-hole))
+     (complement (toehold (id-hole))))
     (domain-cat-?? (- k 1)))))
+
+(define-syntax-rule (gate-?? strand-length)
+  (gate (upper-strand (domain-cat-?? strand-length))
+        (lower-strand (domain-cat-?? strand-length))
+        (duplex-strand (domain-cat-?? strand-length))
+        (lower-strand (domain-cat-?? strand-length))
+        (upper-strand (domain-cat-?? strand-length))))
