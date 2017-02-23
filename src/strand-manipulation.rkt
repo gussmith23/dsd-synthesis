@@ -4,10 +4,11 @@
 ; This includes reversing domains, taking the complement of domains,
 ; rotating species, and getting the canonical normal form of species.
 
-(provide reverse-domain-list
-         complement-of-domain-list
-         rotate-species
-         normalize)
+(provide reverse-domain-list       ; Given a domain list, reverses it
+         complement-of-domain      ; Given a domain, returns the complement of it
+         complement-of-domain-list ; Given a domain list, returns a domain list with everything complemented
+         rotate-species            ; Given a species, returns the 180 rotation
+         normalize)                ; Given a species, returns the equivalent normal form
 
 (require rosette/lib/match
          "dna-syntax.rkt")
@@ -15,12 +16,13 @@
 (define (reverse-domain-list domain-list)
   (reverse domain-list))
 
+(define (complement-of-domain domain)
+  (match domain
+    [(complement inner) inner]
+    [_ (complement domain)]))
+
 (define (complement-of-domain-list domain-list)
-  (map (lambda (sequence)
-         (match sequence
-           [(complement rest) rest]
-           [_ (complement sequence)]))
-       domain-list))
+  (map complement-of-domain domain-list))
 
 ; Takes a species and returns the 180 rotation of it
 (define (rotate-species species)
@@ -80,14 +82,60 @@
 
   (check-equal?
    (valid-dna-struct? test-gate-1)
-   #t)
+   #t
+   "Test gate is a valid gate")
 
   (check-equal?
    (valid-dna-struct? expected-output-1)
-   #t)
+   #t
+   "Expected output gate is a valid gate")
 
   (check-equal?
    (normalize test-gate-1)
-   expected-output-1)
+   expected-output-1
+   "Test normalization")
 
+  (check-equal?
+   (reverse-domain-list (list (complement 0) 1 (toehold 2) (complement (toehold 3))))
+   (list (complement (toehold 3)) (toehold 2) 1 (complement 0))
+   "Test domain reversal")
+
+  (check-equal?
+   (complement-of-domain (complement 0))
+   0
+   "Test complementing a complement")
+
+  (check-equal?
+   (complement-of-domain 0)
+   (complement 0) "Test complementing a lone id")
+  
+  (check-equal?
+   (complement-of-domain-list (list (complement 0) 1 (toehold 2) (complement (toehold 3))))
+   (list 0 (complement 1) (complement (toehold 2)) (toehold 3))
+   "Test complementing a domain list")
+
+  (check-equal?
+   (rotate-species (string->species "<A B C>"))
+   (string->species "{C B A}")
+   "Test rotation of upper strand")
+
+  (check-equal?
+   (rotate-species (string->species "{A B C}"))
+   (string->species "<C B A>")
+   "Test rotation of lower strand")
+
+  ; Expensive synthesis tests
+  (define arbitrary-gate (gate-?? 3))
+
+  (check-equal?
+   (verify (assert (eq? arbitrary-gate
+                        (rotate-species (rotate-species arbitrary-gate)))))
+   (unsat) ; verify can't find counter example
+   "Test double rotation is identity")
+  
+  (check-equal?
+   (verify (assert (eq? (normalize arbitrary-gate)
+                        (normalize (normalize arbitrary-gate)))))
+   (unsat) ; verify can't find a counter example
+   "Test that the normal form of normal form is the same")
   )
