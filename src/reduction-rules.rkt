@@ -239,7 +239,8 @@
   (define (solver-check checker-func args)
     (define formula (apply checker-func args))
     (define cex (solve (assert (not formula))))
-    (check-equal? cex (unsat)))
+    (check-equal? cex (unsat))
+    (clear-asserts!))
 
   (define upper (upper-strand (domain-cat-?? 3)))
   (define lower (lower-strand (domain-cat-?? 3)))
