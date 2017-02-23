@@ -282,5 +282,28 @@
      (equal? (toehold a) (last (duplex-strand-domain-list (gate-duplex (car (rule-rc g))))))))
 
   (solver-check check-rc (list test-gate a))
+
+  (define (check-rga1 g s1 s2)
+    ( =>
+      ; if...
+      (and
+         ; s1 and s2 are reducible via rb
+         (solver-check check-rb (list (upper-strand s1) (lower-strand s2)))
+         ; s1 is the left lower strand of g
+         (equal? s1 (gate-left-lower g)))
+      ; then rga1 should, when fed g and an upper strand containing s2...
+      (and
+       ; produce a gate...
+       (gate? (rule-rga1 g (upper-strand s2)))
+       ; that has the result of reducing s1 and s2 as its first part
+       (equal? (rule-rb (upper-strand s1) (upper-strand s2)) (car (rule-rga1 g (upper-strand s2))))
+      )
+    )
+    )
+
+  (define s2 (domain-cat-?? 2))
+  (define s1 (domain-cat-?? 2))
   
+  (solver-check check-rga1 (list test-gate s1 s2))
+
   )
