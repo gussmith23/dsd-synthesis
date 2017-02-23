@@ -283,6 +283,11 @@
 
   (solver-check check-rc (list test-gate a))
 
+  (define (remove-left-lower g)
+    (match g [(gate lu ll s rl ru)
+              (gate lu `() s rl ru)]
+      [_ g]))
+  
   (define (check-rga1 g s1 s2)
     ( =>
       ; if...
@@ -295,8 +300,10 @@
       (and
        ; produce a gate...
        (gate? (rule-rga1 g (upper-strand s2)))
-       ; that has the result of reducing s1 and s2 as its first part
+       ; that has the result of reducing s1 and s2 as its first part...
        (equal? (rule-rb (upper-strand s1) (upper-strand s2)) (car (rule-rga1 g (upper-strand s2))))
+       ; and s1 is no longer in the second part
+       (equal? (cdr (rule-rga1 g (upper-strand s2))) (remove-left-lower g))
       )
     )
     )
