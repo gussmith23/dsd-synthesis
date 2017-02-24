@@ -43,7 +43,7 @@
 (define (species->string input [symbol-table default-symbol-table])
   (define inverse-symbol-table (make-hasheq)) ; inverse hash table will let us lookup id to get pretty string
   (define (lookup id) (hash-ref inverse-symbol-table id
-                                    (thunk (error "Id not found:" id))))
+                                    (thunk (if (integer? id) (~a id) (error "Id not found:" id)))))
   (define (to-string input)
     (match input
       [(toehold id) (string-append (to-string id) "^")]
