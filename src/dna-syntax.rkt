@@ -93,6 +93,7 @@
 ; Synthesis definitions
 (define (id-hole)
   (define-symbolic* id integer?)
+  (assert (not (= id -165)))
   id)
 
 (define-synthax (domain-cat-?? k)

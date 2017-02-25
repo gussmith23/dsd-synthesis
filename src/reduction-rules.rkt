@@ -235,11 +235,14 @@
 
 (module+ test
   (require rackunit)
+  (require "dna-string-parser.rkt")
 
   (define (solver-check checker-func args)
     (define formula (apply checker-func args))
     (define cex (solve (assert (not formula))))
-    (check-equal? cex (unsat)))
+   ; (display cex)
+    (if (sat? cex) (map (λ (x) (display (species->string (evaluate x cex)))) args)
+    (check-equal? cex (unsat))))
 
   (define upper (upper-strand (domain-cat-?? 3)))
   (define lower (lower-strand (domain-cat-?? 3)))
