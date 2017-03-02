@@ -65,6 +65,7 @@
 
 (define (valid-dna-struct? dna-struct)
   (match dna-struct
+    [(? integer? _) #t]
     [(toehold id) (integer? id)]
     [(complement id-or-toehold)
      (or
