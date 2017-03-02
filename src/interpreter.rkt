@@ -7,6 +7,11 @@
 (require "reduction-rules.rkt")
 (require "strand-manipulation.rkt")
 
+(provide compile
+         initial-state
+         (struct-out state)
+         (struct-out reaction))
+
 (struct reaction (inputs output) #:transparent)
 (struct state (species reactions unrolls) #:transparent)
 (define (initial-state k) (state '() '() k))
