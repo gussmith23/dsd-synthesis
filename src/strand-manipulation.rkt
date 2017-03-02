@@ -8,7 +8,10 @@
          complement-of-domain      ; Given a domain, returns the complement of it
          complement-of-domain-list ; Given a domain list, returns a domain list with everything complemented
          rotate-species            ; Given a species, returns the 180 rotation
-         normalize)                ; Given a species, returns the equivalent normal form
+         normalize                 ; Given a species, returns the equivalent normal form
+         reverse-species           ; Given a species or list of species, reverse it
+         )
+
 
 (require rosette/lib/match
          "dna-syntax.rkt")
@@ -277,6 +280,31 @@
     [(gate: _ _) (pick-normal-gate-form species)]
     [(gate:: _ _) (pick-normal-gate-form species)]))
 )
+
+; reverse a list of species or a single species
+(define (reverse-species species)
+  (match species
+    [ '() '() ]
+    [ (? list? species) (map reverse-species species) ]
+    [ (upper-strand domains) (upper-strand (reverse domains)) ]
+    [ (lower-strand domains) (lower-strand (reverse domains)) ]
+    [ (duplex-strand domains) (duplex-strand (reverse domains)) ]
+
+    [ (gate lu ll s rl ru)
+      (gate
+       (reverse-species ru)
+       (reverse-species rl)
+       (reverse-species s)
+       (reverse-species ll)
+       (reverse-species lu)) ]
+
+    [ (gate: g1 g2)
+      (gate: (reverse-species g2) (reverse-species g1)) ]
+
+    [ (gate:: g1 g2)
+      (gate:: (reverse-species g2) (reverse-species g1)) ]
+    ))
+
 ; Tests
 (module+ test
   (require rackunit)
