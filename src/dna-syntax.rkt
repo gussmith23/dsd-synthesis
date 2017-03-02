@@ -90,25 +90,17 @@
       (gate-struct? g2) (valid-dna-struct? g2))]
     [_ #f]))
 
-; Synthesis definitions
-(define (id-hole)
-  (define-symbolic* id integer?)
-  (assert (not (= id -165)))
-  id)
-
 (define-synthax (domain-cat-?? k)
   #:base
   '()
   #:else
-  (choose
-   '()
-   (cons
-    (choose
-     (id-hole)
-     (complement (id-hole))
-     (toehold (id-hole))
-     (complement (toehold (id-hole))))
-    (domain-cat-?? (- k 1)))))
+  (cons
+   (choose
+    (choose 1 2 3 4)
+    (complement (choose 1 2 3 4))
+    (toehold (choose 5 6 7 8))
+    (complement (toehold (choose 5 6 7 8))))
+   (domain-cat-?? (- k 1))))
 
 (define-syntax-rule (gate-?? strand-length)
   (let ([dup-list (domain-cat-?? strand-length)])
