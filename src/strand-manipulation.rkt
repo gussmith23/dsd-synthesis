@@ -269,7 +269,7 @@
   (for/all ([species species])
   (match species
     ; Normal form of strands are the upper strands
-    [(upper-strand _) (species)]
+    [(upper-strand _) species]
     [(lower-strand _) (rotate-species species)]
 
     ; Normal forms of gates:
