@@ -7,8 +7,7 @@
  ; unary rules:
  rule-ru
  rule-rc
- ; TODO: rule-rm
- rule-rd
+ rule-rd-rm
  rule-rga2
  rule-rgu
  ; TODO: rule-rg
@@ -175,7 +174,7 @@
 
 
 
-(define (rule-rd species)
+(define (rule-rd-rm species)
   (match species
     [ (gate:
        (gate
@@ -194,20 +193,42 @@
       (if
        (and (null? empty-1)
             (null? empty-2)
-            (null? (cdr s))
+            (not (null? s))
+            (not (null? sr-concat))
             (equal? (car sr-concat) (car s)))
 
-       (list
-        (upper-strand (append l2 s r2))
-        (gate
-         (upper-strand l)
-         (lower-strand l-prime)
-         (duplex-strand (append s1 s))
-         (lower-strand r-prime)
-         (upper-strand (cdr sr-concat))))
+       (if
+        (null? (cdr s))
+
+        ; displacement
+        (list
+         (upper-strand (append l2 s r2))
+         (gate
+          (upper-strand l)
+          (lower-strand l-prime)
+          (duplex-strand (append s1 (list (car s))))
+          (lower-strand r-prime)
+          (upper-strand (cdr sr-concat))))
+
+        ; migration
+        (list
+         (gate:
+          (gate
+           (upper-strand l)
+           (lower-strand l-prime)
+           (duplex-strand (append s1 (list (car s))))
+           (lower-strand '())
+           (upper-strand (cdr sr-concat)))
+          (gate
+           (upper-strand (append l2 (list (car s))))
+           (lower-strand '())
+           (duplex-strand (cdr s))
+           (lower-strand r-prime)
+           (upper-strand r2)))))
+
 
        '()) ]
-    
+
     [ _ '() ] ))
 
 
