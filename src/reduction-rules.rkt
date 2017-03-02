@@ -95,7 +95,7 @@
 
       (if (not (null? empty))
           '()
-         
+
           (match (rule-ru g1)
             [(list
               (upper-strand s2)
@@ -109,8 +109,10 @@
                (lower-strand r-prime)
                (upper-strand r))
 
-              (upper-strand s2)) ])) ]
-    
+              (upper-strand s2)) ]
+
+             [_ '() ] )) ]
+
     [ _ '() ]))
 
 (define (rule-rc species)
@@ -199,15 +201,15 @@
   (match* (s1 s2)
 
     [ ((upper-strand upper-domains) (lower-strand lower-domains))
-        
+
       (match (toe-search upper-domains lower-domains)
-        
+
         [ '() '() ]
-        
+
         [ (list
            (list lu (toehold n) ru)
            (list ll _ rl))
-          
+
           (list
            (gate
             (upper-strand lu)
@@ -224,10 +226,10 @@
     [ ((gate lu s1 s rl ru) (upper-strand s2))
 
       (let ([ result (rule-rb (upper-strand s2) s1) ])
-        (if (gate? result)
+        (if (and (not (null? result)) (gate? (car result)))
             (list
              (gate:
-              result
+              (car result)
               (gate lu (lower-strand '()) s rl ru)))
             '())) ]
 
@@ -271,7 +273,7 @@
      (upper-strand (domain-cat-?? 2))))
 
   (define-symbolic a integer?)
-  
+
   (define (check-rc g a)
     (=>
      ; if...
@@ -290,7 +292,7 @@
     (match g [(gate lu ll s rl ru)
               (gate lu `() s rl ru)]
       [_ g]))
-  
+
   (define (check-rga1 g s1 s2)
     ( =>
       ; if...
@@ -313,7 +315,7 @@
 
   (define s2 (domain-cat-?? 2))
   (define s1 (domain-cat-?? 2))
-  
+
   (solver-check check-rga1 (list test-gate s1 s2))
 
   )
