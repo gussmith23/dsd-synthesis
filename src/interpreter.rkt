@@ -5,56 +5,113 @@
 
 (require "dna-syntax.rkt")
 (require "reduction-rules.rkt")
+(require "strand-manipulation.rkt")
 
-(struct state (Is Os) #:transparent)
-(define empty-state (state '() '()))
+(struct reaction (inputs output) #:transparent)
+(struct state (species reactions unrolls) #:transparent)
+(define (initial-state k) (state '() '() k))
 
 (define (union l1 l2) (remove-duplicates (append l1 l2)))
 
-; Table 7 from supplementary material (saturating mode)
 ; compile: ([species]|species, state) -> state
-(define (compile I T)
-  (let ([Is (state-Is T)]
-        [Os (state-Os T)])
+(define (compile species current-state)
+  (let ([current-species (state-species current-state)]
+        [current-reactions (state-reactions current-state)])
     (cond
-      [ (list? I) (foldr compile T I) ]
-      [ (member I Is) T ]
+      ; we've run out of time.
+      [ (= (state-unrolls current-state) 0) current-state ]
+
+      ; no species to consider
+      [ (null? species) current-state ]
+
+      ; process a list of species
+      [ (list? species) (foldr compile current-state species) ]
+
+      ; fixed point
+      [ (member species current-species) current-state ]
+
       [ else
-        (let ([Os-prime (reactions I Is)])
-          (compile (products Os-prime) (state (union Is (list I)) (union Os Os-prime))))])))
+        (let*
+            ; find reactions between species and all species in state
+            ([new-reactions (reactions species current-species)]
+             ; new species are prodcts of those reactions
+             [new-species (products new-reactions)])
 
-; reactions : (species, [species]) -> [species]
+          (compile
+           ; recurse on the list of new species
+           new-species
+           ; and a new state that includes the new reactions
+           (state
+            (union current-species (list species))
+            (union current-reactions new-reactions)
+            (- (state-unrolls current-state) 1)))) ])))
+
+; products : [reaction] -> [species]
+(define (products reaction-list)
+  (map reaction-output reaction-list))
+
+; reactions : (species, [species]) -> [reactions]
 (define (reactions species species-list)
-  (union (unary-reactions species) (binary-reactions species species-list)))
+  (append
+   (unary-reactions species)
+   (binary-reactions species species-list)))
 
-; unary-reactions : species -> [species]
+; unary-reactions : species -> [reactions]
 (define (unary-reactions species)
-  (map normalize
-       (append
-        (list species)
-        (rule-ru species)
-        (rule-rc species)
-        ; TODO: rule-rm
-        (rule-rd species)
-        (rule-rga2 species)
-        ; TODO: rule-rgu
-        ; TODO: rule-rg
-        ; TODO: rule-rv
-        ; TODO: rule-rc
-        ; TODO: rule-re
-        )))
+  (define (unary-rules species)
+    (append
+     (rule-ru species)
+     (rule-rc species)
+     (rule-rd-rm species)
+     (rule-rga2 species)
+     (rule-rgu species)
+     ; TODO: rule-rg
+     ; TODO: rule-rc
+     ))
+  ; rules are invariant to reversal
+  (define (rule-rv species)
+    (append
+     (unary-rules species)
+     (reverse-species
+      (unary-rules (reverse-species species)))))
 
-(define (binary-reactions s1 s2)
+  (map
+   (lambda (product) (reaction (list species) product))
+   (rule-rv species)))
 
-  (map normalize
-       (append
-        (list s1 s2)
-        (rule-rb s1 s2)
-        (rule-rga1 s1 s2)
-        ; TODO: rule-rgb
-        ; TODO: rule-rgl
-        ; TODO: rule-rp
-        )))
+; binary-reactions : (species, [species]) -> [reactions]
+(define (binary-reactions s1 species-list)
+
+  (define (binary-rules s1 s2)
+    (append
+     (rule-rb s1 s2)
+     (rule-rga1 s1 s2)
+     (rule-rgb s1 s2)
+     ; TODO: rule-rgl
+     ; TODO: rule-rp
+     ))
+
+  ; binary rules are coummutative
+  (define (rule-re s1 s2)
+    (append
+     (binary-rules s1 s2)
+     (binary-rules s2 s1)))
+
+  ; rules are invariant to reversal
+  (define (rule-rv s1 s2)
+    (append
+     (rule-re s1 s2)
+     (reverse-species
+      (rule-re (reverse-species s1)
+               (reverse-species s2)))))
+
+  (apply append
+         (map
+          (lambda (s2)
+            (map
+             (lambda (product) (reaction (list s1 s2) product))
+             (rule-rv s1 s2)))
+          species-list)))
 
 (module+ test
   (require rackunit)
@@ -64,8 +121,8 @@
   ; define test inputs and outputs
   (define single-toehold (string->species "<a^>"))
   (define basic-RU-input (string->species "<l>{l'}[n^]{r'}<r>"))
-  (define basic-RU-output (normalize (list (string->species "<l n^ r>")
-                                           (string->species "{l' n^* r'}"))))
+  (define basic-RU-output (list (string->species "<l n^ r>")
+                                (string->species "{l' n^* r'}")))
 
   ; basic parser tests which see if all parses are species
   (check-equal?
@@ -74,14 +131,14 @@
   (check-equal?
    (andmap valid-dna-struct? basic-RU-output)
    #t)
-  
+
   ; basic smoke test for unary reactions
   (check-equal?
    (unary-reactions single-toehold)
-   (list single-toehold))
+   '())
 
   (define (check-unary-reaction input output)
-    (let [(actual (unary-reactions input))]
+    (let [(actual (products (unary-reactions input)))]
       (check-not-false
        (andmap
         (lambda (expected) member expected actual)
@@ -95,17 +152,30 @@
   ; basic RC
   (check-unary-reaction
    (string->species "<l>{l'}[s]{n^* r'}<n^ r>")
-   (normalize (list (string->species "<l>{l'}[s n^]{r'}<r>"))))
+   (list (string->species "<l>{l'}[s n^]{r'}<r>")))
 
   ; TODO: still have to re-write RM rule
   ; basic RM
-  ;(check-equal?
-  ;(unary-reactions (string->species "<l>{l'}[s1]<s r2>:<l1>[s s2]{r'}<r>}"))
-  ;(normalize (list (string->species "<l>{l'}[s1 s]<r2>:<l1 s>[s2]{r'}<r>}"))))
- )
+  (check-unary-reaction
+   (string->species "<l>{l'}[s1]<s r2>:<l1>[s s2]{r'}<r>}")
+   (list (string->species "<l>{l'}[s1 s]<r2>:<l1 s>[s2]{r'}<r>}")))
 
-(define (normalize a) a)
+  (define and-test-system
+    (list
+     (upper-strand (list (toehold 1) 2))
+     (upper-strand (list 3 (toehold 4)))
+     (gate (upper-strand '())
+           (lower-strand (list (complement (toehold 1))))
+           (duplex-strand (list 2 3))
+           (lower-strand (list (complement (toehold 4))))
+           (upper-strand '()))))
 
-; placeholders
-(define (products reacts) '())
+  (check-not-false
+   (member
+    (upper-strand (list 2 3))
+    (state-species (compile and-test-system (initial-state -1)))))
+
+  )
+
+
 
