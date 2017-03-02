@@ -270,16 +270,15 @@
 ; Takes a species and returns an equivalent canonical form
 (define (normalize species)
   (for/all ([species species])
-  (match species
-    ; Normal form of strands are the upper strands
-    [(upper-strand _) species]
-    [(lower-strand _) (rotate-species species)]
+    (match species
+      ; Normal form of strands are the upper strands
+      [(upper-strand _) species]
+      [(lower-strand _) (rotate-species species)]
 
-    ; Normal forms of gates:
-    [(gate _ _ _ _ _) (pick-normal-gate-form species)]
-    [(gate: _ _) (pick-normal-gate-form species)]
-    [(gate:: _ _) (pick-normal-gate-form species)]))
-)
+      ; Normal forms of gates:
+      [(gate _ _ _ _ _) (pick-normal-gate-form species)]
+      [(gate: _ _) (pick-normal-gate-form species)]
+      [(gate:: _ _) (pick-normal-gate-form species)])))
 
 ; reverse a list of species or a single species
 (define (reverse-species species)
