@@ -309,6 +309,7 @@
   (require rackunit)
   (require "dna-syntax.rkt")
   (require "dna-string-parser.rkt")
+  (require "test.rkt")
 
   (define test-gate-1 (string->species "<L1>{L1b}[S1]{R1b}<R1>:<L2>{S L2b}[S2]{R2b}<R2>"))
   (define expected-output-1 (string->species "<R2b>{R2}[S2*]{L2}<L2b S R1b>::{R1}[S1*]{L1}<L1b>"))
@@ -323,46 +324,46 @@
    #t
    "Expected output gate is a valid gate")
 
-  (check-equal?
+  (test-exact
    (normalize test-gate-1)
    expected-output-1
    "Test normalization")
 
-  (check-equal?
+  (test-exact
    (normalize (normalize test-gate-1))
    expected-output-1
    "Test double normalization")
 
-  (check-equal?
+  (test-exact
    (reverse-domain-list (list (complement 0) 1 (toehold 2) (complement (toehold 3))))
    (list (complement (toehold 3)) (toehold 2) 1 (complement 0))
    "Test domain reversal")
 
-  (check-equal?
+  (test-exact
    (complement-of-domain (complement 0))
    0
    "Test complementing a complement")
 
-  (check-equal?
+  (test-exact
    (complement-of-domain 0)
    (complement 0) "Test complementing a lone id")
 
-  (check-equal?
+  (test-exact
    (species->string (zip-up-duplex (string->species "<a b c>{d b* c*}[mid]{x* y* z*}<x y z>")))
    "<a>{d}[b c mid z y x]"
    "Test zip-up-duplex")
   
-  (check-equal?
+  (test-exact
    (complement-of-domain-list (list (complement 0) 1 (toehold 2) (complement (toehold 3))))
    (list 0 (complement 1) (complement (toehold 2)) (toehold 3))
    "Test complementing a domain list")
 
-  (check-equal?
+  (test-exact
    (rotate-species (string->species "<A B C>"))
    (string->species "{C B A}")
    "Test rotation of upper strand")
 
-  (check-equal?
+  (test-exact
    (rotate-species (string->species "{A B C}"))
    (string->species "<C B A>")
    "Test rotation of lower strand")
@@ -398,6 +399,6 @@
 
   (printf "Running verification-tests (Expensive tests!)\n")
   (require rackunit/text-ui)
-  (run-tests verification-tests)
+  ;(run-tests verification-tests)
   (printf "Done running verification tests\n")
   )

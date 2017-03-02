@@ -117,6 +117,7 @@
   (require rackunit)
   (require "dna-syntax.rkt")
   (require "dna-string-parser.rkt")
+  (require "test.rkt")
 
   ; define test inputs and outputs
   (define single-toehold (string->species "<a^>"))
@@ -133,7 +134,7 @@
    #t)
 
   ; basic smoke test for unary reactions
-  (check-equal?
+  (test-exact
    (unary-reactions single-toehold)
    '())
 
