@@ -10,7 +10,7 @@
  ; TODO: rule-rm
  rule-rd
  rule-rga2
- ; TODO: rule-rgu
+ rule-rgu
  ; TODO: rule-rg
  ; TODO: rule-rv
  ; TODO: rule-rc
@@ -20,7 +20,7 @@
  rule-rb
  ; TODO: rule-rp
  rule-rga1
- ; TODO: rule-rgb
+ rule-rgb
  ; TODO: rule-rgl
  )
 
@@ -73,14 +73,28 @@
 
       (match s
         [ (list (toehold n))
-          
+
           (list
            (upper-strand (append lu (list (toehold n)) ru))
            (lower-strand (append ll (list (complement (toehold n))) rl))) ]
-        
+
         [ _ '() ] )]
-    
+
     [ _ '() ] ))
+
+(define (rule-rgu species)
+  (match species
+    [ (gate: left right)
+      (match (rule-rd-rm left)
+        [ '() '() ]
+
+        ; migration
+        [ (list new-left) (list (gate: new-left right)) ]
+
+        ; displacement
+        [ (list strand new-left) (list strand (gate: new-left right)) ]) ]
+
+    [ _ '() ]))
 
 (define (rule-rga2 species)
   (match species
@@ -219,6 +233,34 @@
             (upper-strand ru))) ] )]
 
     [ (_ _) '() ] ))
+
+(define (rule-rgb s1 s2)
+  (match* (s1 s2)
+    [ ((gate: (gate: left mid) right) s2)
+
+      (let* ([maybe-left  (rule-rga1 left  s2)]
+             [maybe-mid   (rule-rga1 mid   s2)]
+             [maybe-right (rule-rga1 right s2)]
+             [new-left    (if (null? maybe-left)  left  (car maybe-left) )]
+             [new-mid     (if (null? maybe-mid)   mid   (car maybe-mid)  )]
+             [new-right   (if (null? maybe-right) right (car maybe-right))])
+
+        (if (and (null? maybe-left) (null? maybe-mid) (null? maybe-right))
+            '()
+            (list (gate: (gate: (new-left new-mid) new-right))))) ]
+
+    [ ((gate: left right) s2)
+
+      (let* ([maybe-left  (rule-rga1 left  s2)]
+             [maybe-right (rule-rga1 right s2)]
+             [new-left    (if (null? maybe-left)  left  (car maybe-left))]
+             [new-right   (if (null? maybe-right) right (car maybe-right))])
+
+        (if (and (null? maybe-left) (null? maybe-right))
+            '()
+            (list (gate: new-left new-right)))) ]
+
+    [ (_ _) '() ]))
 
 
 (define (rule-rga1 s1 s2)
