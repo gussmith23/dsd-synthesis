@@ -122,6 +122,59 @@ default semantics, instead. Our results are based on the default semantics.
   and the use of rule functions, etc. Maybe also mention the solver
   aided tests?}
 
+Each DSD semantics is presented as a series of reduction rules on DNA
+strands.  To implement this in Rosette, we developed a grammar (based
+on an incomplete one given by the DSD paper~\cite{dsd}) that describes
+the possible structures of DNA strand displacement reactions. We omit
+a full description of the grammar here, but cover some important
+structures.  A \emph{domain} is a unique string of bases (i.e. the
+CATG proteins that make up DNA); all domains in a system are assumed
+to not bond with any other domains other than their
+\emph{complement}---the domain with the exact opposite series of
+bases. We represent domains by integers, so in a given system domain 0
+might stand for TCAT and 1 might stand for GGACG, but our encoding
+abstracts those particulars away. A \emph{strand} consists of a
+\emph{domain concatentation} (one or more domains) and an orientation:
+either upper or lower.  A \emph{gate} consists of two strands (one
+upper and one lower) that overlap in at least domain---meaning that
+the upper domain must contain the complement of at least one of the
+lower domains. All of these constructs are represented as transparent
+structures in Rosette, but synthax is only defined for domain
+concatenations \textcolor{red}{TODO: why is this? Is Kendall changing
+  this right now? It seems like with synthax only defined for domain
+  cats it's tough to synthesize an AND gate...}.
+
+We implemented the reduction rules as functions on these DNA
+structures.  Each rule function checks if the preconditions for the
+rules are present and then applies the rule if they are; our
+interpreter tries all the rules successively at each step in an
+arbitrary order until the system reaches fixpoint. Reasoning about
+this step is difficult for the solver, which is why we needed to
+switch from the detailed to the default semantics (as the default
+semantics requires fewer rule applications to achieve the same result
+since the rules are more complex). As a further optimization, we
+restrict the number of domains by requiring each domain to be
+represented by an integer between 0 and \textcolor{red}{16 (I think)};
+this speeds up the solver considerably by reducing the search space
+but limits us to reactions that involve \textcolor{red}{16} or fewer
+domains. Since we are looking for small reactions, this is acceptable
+for now, but would need to be addressed (perhaps by parameterizing
+it?) for a more complete system.
+
+As we were working on writing the rule functions, we originally were
+verifying the rules through traditional \emph{ad hoc} testing. But,
+since we were working in Rosette, once synthax was defined for domain
+concatenations we were able to write a series of tests that verify
+properties of rules (such as that the presence of the products in the
+result implies the presence of the reactants in the original system)
+for bounded domain concatenations of up to some size $k$ (because our
+tests were being run on a CI server on each commit, they were
+typically restricted to $k=2$ or $k=3$). We found the ability to write
+these tests to be a very useful property of a solver-aided language;
+we were much more confident that the (complex) rule implementations
+were correct once we had verified them for small domain
+concatenations.
+
 \section{Results}
 
 \textcolor{red}{How things actually turn out...}
