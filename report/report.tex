@@ -1,0 +1,152 @@
+\documentclass{article}
+
+\usepackage{fullpage}
+\usepackage{parskip}
+\usepackage{color}
+
+\begin{document}
+\title{Program Synthesis for DNA Strand Displacement}
+\author{Kendall Stewart, Anthony Ha, Martin Kellogg}
+
+\maketitle
+
+\section{Introduction}
+
+DNA computing seeks to leverage the chemical properties
+of DNA molecules as a computational substrate.
+From a medical perspective, DNA computing can enable the
+construction of complex devices at a cellular scale for more precise
+diagnostic tests or drug delivery. From a computer architecture perspective,
+DNA is capable of performing massively parallel computations with very low
+power consumption.
+
+The feasibility of DNA computing was first demonstrated by encoding the
+Hamiltonian Path Problem into DNA~\cite{adelman}. This encoding was constructed
+by hand, but recent work has advanced DNA strand displacement reactions as a
+primitive for DNA computation, because they can implement a wide
+range of algorithms and devices, including boolean circuits~\cite{strands},
+oscillators~\cite{dsd}, and neural networks~\cite{strandnn}.
+
+Because of their boolean completeness, strand displacement reactions are
+theoretically capable of implementing binary arithmetic operations. However,
+some operations (such as multiplication) require a large number of
+boolean gates, and strand-based boolean gates do not scale as well as
+silicon-based gates; even moderately-sized systems begin to suffer noise
+from unwanted interactions.
+
+Because strand displacement reactions are capable of more than just boolean
+logic, an arithmetic operation can be implemented with a set of
+fewer, more complex strand displacement gates. However, reasoning about the
+behavior of more complex reactions is difficult for humans. We hypothesize that
+a program synthesis tool equipped with appropriate semantics for strand
+displacement reactions could ``discover" gates that would be difficult for a
+human to find.
+
+A formal semantics for strand displacement reactions is provided in the
+description of DSD~\cite{dsd}, a programming language for specifying and
+simulating DNA strand displacement circuits. Given a set of initial strand
+species (reactants), DSD applies reduction rules to infer the intermediate and
+final strand species (products), and creates a directed reaction graph with
+edges between reactants and products, weighted by the rate of each reaction.
+This graph, along with ordinary differential equations derived from the rates,
+are used to simulate the strand displacement system.
+
+Ignoring rates, the structure of the unweighted reaction graph encodes
+conditions that are necessary (but not sufficient) for some product to have a
+particular meaning. For instance, if all paths leading to a product include both
+initial species $A$ and initial species $B$, the product could
+represent $A \land B$.
+
+As a first pass at applying program synthesis to DNA strand
+displacement, we have implemented an interpreter for the semantics of
+DSD in Rosette~\cite{rosette}. Our tool enables us to construct
+predicates that can reason about
+the structure of the resulting graph (without reaction rates). Our goal
+for the quarter was to determine whether
+the solver can satisfy queries such as ``given
+reactant $A$ and reactant $B$, find a system of gates where the
+product represents $A \land B$" (where this meaning is derived from
+the graph structure, as described above).
+
+\textcolor{red}{TODO: Paragraph summarizing results.}
+
+The primary contributions of our work are:
+\begin{enumerate}
+\item
+  An implementation in Rosette of both the ''detailed''
+  and ''default'' semantics for DSD, as an interpreter for
+  strand displacement reactions.
+
+\item
+  An evaluation of this interpreter's usefulness for synthesizing
+  implementations of simple boolean circuits as strand displacement
+  reactions.
+
+\item
+  \textcolor{red}{A cool new gate or the like if we end up finding one.}
+\end{enumerate}
+
+\section{Overview of Our Approach}
+
+\textcolor{red}{Describe how we took the semantics presented in the DSD paper and translated them into Rosette. A few paragraphs at most.}
+
+\section{Algorithms and Encodings}
+
+\textcolor{red}{Describe our use of transparent structs in Rosette,
+  and the use of rule functions, etc. Maybe also mention the solver
+  aided tests?}
+
+\section{Results}
+
+\textcolor{red}{How things actually turn out...}
+
+\section{Teamwork}
+
+To ensure that all three of us were involved in developing the encoding of
+strand displacement reactions we used, much of the core infrastuctural code
+that defines the encoding was developed by all three of us working on a single
+screen. Once we had defined the core encoding, each team member worked on
+making use of it in a particular way: Kendall, as the domain expert, worked
+on implementing the rules and refining the encoding to perform better; Anthony
+worked on building a implementing a normalization procedure (which required
+some modifications to the encoding, as well) and a pretty printer/parser;
+Martin created a test infrastructure (including a continuous integration server)
+and then on writing verification procedures for the rules Kendall was
+implementing (i.e. solver-aided exhaustive tests).
+
+\section{Course Topics}
+
+This project made heavy use of a solver-aided language: it is entirely dependent
+on Rosette. In particular, we needed Rosette's ability to angelically execute
+our symbolic programs (which represent reactions) and produce reactants that
+cause the programs (reactions) to have the desired behavior---our synthesis
+task. We also used bounded verification to test that our more complex
+rules were correct. All topics we required were covered by the class.
+
+\begin{thebibliography}{9}
+
+\bibitem{adelman}
+L. M. Adleman,
+“Molecular computation of solutions to combinatorial problems,”
+Science, vol. 266, no. 5187, pp. 1021–1024, Nov. 1994.
+
+\bibitem{strands}
+D. Y. Zhang and G. Seelig,
+“Dynamic DNA nanotechnology using strand-displacement reactions,”
+Nature Chemistry, vol. 3, no. 2, pp. 103–113, Feb. 2011.
+
+\bibitem{dsd}
+M. R. Lakin, S. Youssef, L. Cardelli, and A. Phillips,
+“Abstractions for DNA circuit design,”
+Journal of The Royal Society Interface, vol. 9, no. 68, Jul. 2011.
+
+\bibitem{strandnn}
+L. Qian, E. Winfree, and J. Bruck, “Neural network computation with DNA strand
+displacement cascades,” Nature, vol. 475, no. 7356, pp. 368–372, Jul. 2011.
+
+\bibitem{rosette}
+  E. Torlak and R. Bodik, “A lightweight symbolic virtual machine for solver-aided host languages,” Programming Language Design and Implementation (PLDI), vol. 49, no. 6, pp. 530-541, 2014.
+
+\end{thebibliography}
+
+\end{document}
