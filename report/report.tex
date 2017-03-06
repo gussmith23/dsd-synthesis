@@ -68,13 +68,13 @@ reactant $A$ and reactant $B$, find a system of gates where the
 product represents $A \land B$" (where this meaning is derived from
 the graph structure, as described above).
 
-\textcolor{red}{TODO: Paragraph summarizing results.}
+\textcolor{red}{TODO: Paragraph summarizing results + new OR gate.}
 
 The primary contributions of our work are:
 \begin{enumerate}
 \item
-  An implementation in Rosette of both the ''detailed''
-  and ''default'' semantics for DSD, as an interpreter for
+  An implementation in Rosette of both the detailed
+  and default semantics for DSD, as an interpreter for
   strand displacement reactions.
 
 \item
@@ -89,6 +89,32 @@ The primary contributions of our work are:
 \section{Overview of Our Approach}
 
 \textcolor{red}{Describe how we took the semantics presented in the DSD paper and translated them into Rosette. A few paragraphs at most.}
+
+DSD~\cite{dsd} is a language for specifying strand displacement
+reactions.  DSD includes four semantics, which each define an
+interpretation of the syntax they use to represent strand displacement
+reactions, ranging from very faithful to the \emph{wetware}---the actual
+DNA reactions--to very abstract. We focused on two semantics:
+detailed and default. The \emph{detailed} semantics is the most faithful
+to the wetware while still ignoring reaction rates, which we chose not
+to model since they are defined by real-valued ordinary differential
+equations, which we expected would be too expensive for the solver to
+reason about. The \emph{default} semantics (named because the DSD tool
+uses them by default), by contrast, combines many of the reactions
+specified in the detailed semantics into abstract reactions that
+are easier to reason about but less faithful to what actually happens
+in practice.
+
+The detailed semantics consists of simpler reactions than the default
+semantics, but the default semantics has fewer reactions. Because we
+intended to only implement the reactions we would need to demonstrate
+the viability of the approach on a simple example (initially an
+AND gate), we began by implementing only the reactions from the
+detailed semantics that are needed to reproduce the AND gate given as
+an example by DSD. We discovered, however, that because we needed many
+rules (\textcolor{red}{HOW MANY?}) the performance of the solver was
+unacceptable with the detailed semantics. We therefore implemented the
+default semantics, instead. Our results are based on the default semantics.
 
 \section{Algorithms and Encodings}
 
