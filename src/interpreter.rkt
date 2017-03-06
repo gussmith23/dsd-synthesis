@@ -7,6 +7,11 @@
 (require "reduction-rules.rkt")
 (require "strand-manipulation.rkt")
 
+(provide compile
+         initial-state
+         (struct-out state)
+         (struct-out reaction))
+
 (struct reaction (inputs output) #:transparent)
 (struct state (species reactions unrolls) #:transparent)
 (define (initial-state k) (state '() '() k))
@@ -52,9 +57,10 @@
 
 ; reactions : (species, [species]) -> [reactions]
 (define (reactions species species-list)
-  (append
-   (unary-reactions species)
-   (binary-reactions species species-list)))
+  (binary-reactions species species-list))
+  ;(append
+  ; (unary-reactions species)
+  ; (binary-reactions species species-list)))
 
 ; unary-reactions : species -> [reactions]
 (define (unary-reactions species)
@@ -84,11 +90,11 @@
 
   (define (binary-rules s1 s2)
     (append
-     (rule-rb s1 s2)
-     (rule-rga1 s1 s2)
-     (rule-rgb s1 s2)
-     ; TODO: rule-rgl
-     ; TODO: rule-rp
+     ;(rule-rb s1 s2)
+     ;(rule-rga1 s1 s2)
+     ;(rule-rgb s1 s2)
+     (rule-rgl s1 s2)
+     (rule-rp s1 s2)
      ))
 
   ; binary rules are coummutative

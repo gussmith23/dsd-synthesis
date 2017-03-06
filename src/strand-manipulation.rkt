@@ -240,14 +240,14 @@
 ;   1 if g1 is after g2
 (define (compare-normal-gates g1 g2)
   (match* (g1 g2)
-    [((gate: _ _) (gate:: _ _)) 1]
+    [((gate: _ _) (gate:: _ _)) -1]
     [((gate: _ _) (gate _ _ _ _ _)) -1]
     [((gate: ga1 ga2) (gate: gb1 gb2))
      (define first-compare (compare-normal-gates ga1 gb1))
      (if (eq? first-compare 0)
          (compare-normal-gates ga2 gb2)
          first-compare)]
-    [((gate:: _ _) (gate: _ _)) -1]
+    [((gate:: _ _) (gate: _ _)) 1]
     [((gate:: _ _) (gate _ _ _ _ _)) -1]
     [((gate:: ga1 ga2) (gate:: gb1 gb2))
      (define first-compare (compare-normal-gates ga1 gb1))
@@ -270,16 +270,15 @@
 ; Takes a species and returns an equivalent canonical form
 (define (normalize species)
   (for/all ([species species])
-  (match species
-    ; Normal form of strands are the upper strands
-    [(upper-strand _) species]
-    [(lower-strand _) (rotate-species species)]
+    (match species
+      ; Normal form of strands are the upper strands
+      [(upper-strand _) species]
+      [(lower-strand _) (rotate-species species)]
 
-    ; Normal forms of gates:
-    [(gate _ _ _ _ _) (pick-normal-gate-form species)]
-    [(gate: _ _) (pick-normal-gate-form species)]
-    [(gate:: _ _) (pick-normal-gate-form species)]))
-)
+      ; Normal forms of gates:
+      [(gate _ _ _ _ _) (pick-normal-gate-form species)]
+      [(gate: _ _) (pick-normal-gate-form species)]
+      [(gate:: _ _) (pick-normal-gate-form species)])))
 
 ; reverse a list of species or a single species
 (define (reverse-species species)
@@ -313,7 +312,7 @@
   (require "test.rkt")
 
   (define test-gate-1 (string->species "<L1>{L1b}[S1]{R1b}<R1>:<L2>{S L2b}[S2]{R2b}<R2>"))
-  (define expected-output-1 (string->species "<R2b>{R2}[S2*]{L2}<L2b S R1b>::{R1}[S1*]{L1}<L1b>"))
+  (define expected-output-1 (string->species "<L1>{L1b}[S1]{R1b S L2b}<R1>:<L2>[S2]{R2b}<R2>"))
 
   (check-equal?
    (valid-dna-struct? test-gate-1)
@@ -400,6 +399,6 @@
 
   (printf "Running verification-tests (Expensive tests!)\n")
   (require rackunit/text-ui)
-  ;(run-tests verification-tests)
+  (run-tests verification-tests)
   (printf "Done running verification tests\n")
   )
