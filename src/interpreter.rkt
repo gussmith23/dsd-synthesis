@@ -1,123 +1,115 @@
 #lang rosette/safe
 
 (require rosette/lib/match)
-(require rosette/lib/synthax)
 
 (require "dna-syntax.rkt")
 (require "reduction-rules.rkt")
 (require "strand-manipulation.rkt")
 
-(provide compile
-         initial-state
-         (struct-out state)
-         (struct-out reaction))
+(provide
+ enumerate-reactions
+ parents
+ reaction-requires
+ (struct-out reaction))
 
-(struct reaction (inputs output) #:transparent)
-(struct state (species reactions unrolls) #:transparent)
-(define (initial-state k) (state '() '() k))
+(define (concat-map f xs) (apply append (map f xs)))
 
-(define (union l1 l2) (remove-duplicates (append l1 l2)))
+; enumerate all reactions between initial species, and between
+; the initial species and the products of those reactions
+(define (enumerate-reactions species)
+  (let* ([gates (filter gate? species)]
+         [strands (filter upper-strand? species)]
 
-; compile: ([species]|species, state) -> state
-(define (compile species current-state)
-  (let ([current-species (state-species current-state)]
-        [current-reactions (state-reactions current-state)])
-    (cond
-      ; we've run out of time.
-      [ (= (state-unrolls current-state) 0) current-state ]
+         ; compute reactions between initial strands and initial gates
+         [strand-gate-reactions
+          (concat-map
+           (lambda (strand)
+             (concat-map
+              (lambda (gate)
+                (binary-reactions strand gate))
+              gates))
+           strands)]
 
-      ; no species to consider
-      [ (null? species) current-state ]
+         ; compute reactions between initial strands and new gates
+         [strand-newgate-reactions
+          (concat-map
+           (lambda (strand)
+             (concat-map
+              (lambda (first-rxn)
+                (map
+                 (lambda (second-rxn)
+                   (reaction
+                    strand first-rxn
+                    (reaction-strand-out second-rxn)
+                    (reaction-gate-out second-rxn)))
+                 (binary-reactions strand (reaction-gate-out first-rxn))))
+              strand-gate-reactions))
+           strands)]
 
-      ; process a list of species
-      [ (list? species) (foldr compile current-state species) ]
+         ; compute reactions between new strands and initial gates
+         [newstrand-gate-reactions
+          (concat-map
+           (lambda (gate)
+             (concat-map
+              (lambda (first-rxn)
+                (map
+                 (lambda (second-rxn)
+                   (reaction
+                    first-rxn gate
+                    (reaction-strand-out second-rxn)
+                    (reaction-gate-out second-rxn)))
+                 (binary-reactions (reaction-strand-out first-rxn) gate)))
+              strand-gate-reactions))
+           gates)]
+         )
 
-      ; fixed point
-      [ (member species current-species) current-state ]
-
-      [ else
-        (let*
-            ; find reactions between species and all species in state
-            ([new-reactions (reactions species current-species)]
-             ; new species are prodcts of those reactions
-             [new-species (products new-reactions)])
-
-          (compile
-           ; recurse on the list of new species
-           new-species
-           ; and a new state that includes the new reactions
-           (state
-            (union current-species (list species))
-            (union current-reactions new-reactions)
-            (- (state-unrolls current-state) 1)))) ])))
-
-; products : [reaction] -> [species]
-(define (products reaction-list)
-  (map reaction-output reaction-list))
-
-; reactions : (species, [species]) -> [reactions]
-(define (reactions species species-list)
-  (binary-reactions species species-list))
-  ;(append
-  ; (unary-reactions species)
-  ; (binary-reactions species species-list)))
-
-; unary-reactions : species -> [reactions]
-(define (unary-reactions species)
-  (define (unary-rules species)
     (append
-     (rule-ru species)
-     (rule-rc species)
-     (rule-rd-rm species)
-     (rule-rga2 species)
-     (rule-rgu species)
-     ; TODO: rule-rg
-     ; TODO: rule-rc
-     ))
-  ; rules are invariant to reversal
-  (define (rule-rv species)
-    (append
-     (unary-rules species)
-     (reverse-species
-      (unary-rules (reverse-species species)))))
+     strand-gate-reactions
+     strand-newgate-reactions
+     newstrand-gate-reactions)))
 
+; apply the rule to the reverse of s1 and s2, then reverse the results
+(define (reverse-rule rule s1 s2)
+  (match (rule (reverse-species s1) (reverse-species s2))
+    [ (reaction _ _ out1 out2)
+      (reaction
+       s1 s2
+       (reverse-species out1)
+       (reverse-species out2)) ]))
+
+; binary-reactions : (strand, gate) -> [reaction, reaction]
+(define (binary-reactions strand gate)
+  (cond
+    [ (or (null? strand) (null? gate))
+      (list
+       (reaction strand gate '() '())
+       (reaction strand gate '() '())) ]
+
+    [ (gate? gate)
+      (list
+       (rule-rp strand gate)
+       (reverse-rule rule-rp strand gate)) ]
+
+    [ (gate:? gate)
+      (list
+       (rule-rgl strand gate)
+       (reverse-rule rule-rgl strand gate)) ]))
+
+; given a strand and a list of reactions, filter them
+; by the reactions that lead to the strand
+(define (parents strand reactions)
   (map
-   (lambda (product) (reaction (list species) product))
-   (rule-rv species)))
+   (lambda (rxn)
+     (if (equal? (reaction-strand-out rxn) strand) rxn '()))
+   reactions))
 
-; binary-reactions : (species, [species]) -> [reactions]
-(define (binary-reactions s1 species-list)
-
-  (define (binary-rules s1 s2)
-    (append
-     ;(rule-rb s1 s2)
-     ;(rule-rga1 s1 s2)
-     ;(rule-rgb s1 s2)
-     (rule-rgl s1 s2)
-     (rule-rp s1 s2)
-     ))
-
-  ; binary rules are coummutative
-  (define (rule-re s1 s2)
-    (append
-     (binary-rules s1 s2)
-     (binary-rules s2 s1)))
-
-  ; rules are invariant to reversal
-  (define (rule-rv s1 s2)
-    (append
-     (rule-re s1 s2)
-     (reverse-species
-      (rule-re (reverse-species s1)
-               (reverse-species s2)))))
-
-  (apply append
-         (map
-          (lambda (s2)
-            (map
-             (lambda (product) (reaction (list s1 s2) product))
-             (rule-rv s1 s2)))
-          species-list)))
+; this is true iff rxn requires strand, either directly or indirectly
+(define (reaction-requires rxn strand)
+  (and
+   (reaction? rxn)
+   (or (equal? (reaction-strand-in rxn) strand)
+       (reaction-requires (reaction-gate-in rxn) strand)
+       (reaction-requires (reaction-strand-in rxn) strand))))
 
 ; tests are commented out right now because of a major rework
 #;(module+ test
