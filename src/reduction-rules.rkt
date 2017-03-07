@@ -21,7 +21,12 @@
  rule-rga1
  rule-rgb
  rule-rgl
+
+ (struct-out reaction)
  )
+
+(struct reaction (strand-in gate-in strand-out gate-out) #:transparent)
+(define (no-reaction s1 s2) (reaction s1 s2 '() '()))
 
 ; Takes two lists of domains and locates the first pair of matching toeholds.
 ; For instance, given (a b c^ d) and (e c* f g h), this function produces (((a b) (c^) (d)) ((e) (c*) (f g h)))
@@ -60,6 +65,111 @@
 
     ; end of first list -- nothing found
     [ ( '() _ ) '() ]))
+
+; return the longest common prefix of two sequences,
+; as well as the two suffixes
+(define (prefix-match branch gate)
+  (define (prefix-match-aux branch gate prefix)
+
+    (if (and (not (null? branch))
+             (not (null? gate))
+             (equal? (car branch) (car gate)))
+
+        ; heads match, add prefix and continue
+        (prefix-match-aux (cdr branch) (cdr gate) (cons (car branch) prefix))
+
+        ; heads don't match, stop
+        (list (reverse prefix) branch gate)))
+
+  (prefix-match-aux branch gate '()))
+
+
+(define (rule-rp strand-in gate-in)
+  (match* (strand-in gate-in)
+    [ ((upper-strand upper-domains)
+
+       (gate
+        (upper-strand lu)
+        (lower-strand ll-domains)
+        (duplex-strand s)
+        (lower-strand rl)
+        (upper-strand ru)))
+
+      (match (toe-search upper-domains ll-domains)
+        ; no matching toeholds -- do nothing
+        [ '() (no-reaction strand-in gate-in) ]
+
+        ; matching toeholds -- check conditions
+        [ (list
+           (list upper-left toe upper-right)
+           (list lower-left ctoe lower-right))
+
+
+          (if (and
+               ;toehold must not be last domain in upper strand
+               (not (null? upper-right))
+               ; but it must be last domain in lower strand
+               (null? lower-right)
+               ; reaction must lead to migration or displacement
+               (equal? (car upper-right) (car s)))
+
+              (match (prefix-match upper-right s)
+
+                [ (list prefix rest-branch rest-gate)
+
+                  (if (equal? rest-gate '())
+                      ; nothing else on gate; strand displacement
+                      (reaction
+                       strand-in gate-in
+                       (upper-strand (append lu prefix ru))
+                       (gate
+                        (upper-strand upper-left)
+                        (lower-strand lower-left)
+                        (duplex-strand  (cons toe prefix))
+                        (lower-strand rl)
+                        (upper-strand rest-branch)))
+
+                      ; stuff left on gate; branch migration
+                      (reaction
+                       strand-in gate-in
+                       '()
+                       (gate:
+                        (gate
+                         (upper-strand upper-left)
+                         (lower-strand lower-left)
+                         (duplex-strand (cons toe prefix))
+                         (lower-strand '())
+                         (upper-strand rest-branch))
+                        (gate
+                         (upper-strand (append lu prefix))
+                         (lower-strand '())
+                         (duplex-strand rest-gate)
+                         (lower-strand rl)
+                         (upper-strand ru))))) ])
+
+              ; conditions do not hold -- rule does not fire
+              (no-reaction strand-in gate-in)) ]) ]
+
+    ; rule did not match
+    [ (_ _) (no-reaction strand-in gate-in) ]))
+
+(define (rule-rgl strand-in gate-in)
+  (match* (strand-in gate-in)
+    [ (strand-in (gate: left right))
+      (match (rule-rp strand-in left)
+        [ (reaction _ _ strand-out gate-out)
+
+          (cond
+            ; result was strand displacement
+            [ (not (null? strand-out)) (reaction strand-in gate-in strand-out (gate: gate-out right)) ]
+
+            ; result was branch migration
+            [ (not (null? gate-out)) (reaction strand-in gate-in '() (gate: gate-out right)) ]
+
+            ; no reaction
+            [ else (no-reaction strand-in gate-in) ]) ]) ]
+
+    [ (_ _) (no-reaction strand-in gate-in) ]))
 
 (define (rule-ru species)
   (match species
@@ -284,24 +394,6 @@
     [ (_ _) '() ]))
 
 
-(define (rule-rgl s1 s2)
-  (match* (s1 s2)
-    [ ((gate: left right) s2)
-      (let* ([left-result  (rule-rp s2 left)]
-             [right-result (rule-rp s2 right)]
-             [s2-a (if (null? left-result) '() (list (first left-result)))]
-             [new-left (if (null? left-result) left (second left-result))]
-             [s2-b (if (null? right-result) '() (list (first right-result)))]
-             [new-right (if (null? right-result) right (second right-result))])
-
-             (if (and (null? left-result) (null? right-result))
-                 '()
-                 (append
-                  s2-a
-                  s2-b
-                  (list
-                   (gate: new-left new-right))))) ]
-    [ (_ _) '() ]))
 
 (define (rule-rga1 s1 s2)
   (match* (s1 s2)
@@ -317,86 +409,8 @@
 
     [ (_ _) '() ] ))
 
-(define (prefix-match branch gate)
-  (define (prefix-match-aux branch gate prefix)
-
-    (if (and (not (null? branch))
-             (not (null? gate))
-             (equal? (car branch) (car gate)))
-
-        ; heads match, add prefix and continue
-        (prefix-match-aux (cdr branch) (cdr gate) (cons (car branch) prefix))
-
-        ; heads don't match, stop
-        (list (reverse prefix) branch gate)))
-
-  (prefix-match-aux branch gate '()))
-
-(define (rule-rp s1 s2)
-  (match* (s1 s2)
-    [ ((upper-strand upper-domains)
-
-       (gate
-        (upper-strand lu)
-        (lower-strand ll-domains)
-        (duplex-strand s)
-        (lower-strand rl)
-        (upper-strand ru)))
-
-      (match (toe-search upper-domains ll-domains)
-        ; no matching toeholds -- do nothing
-        [ '() '() ]
-
-        ; matching toeholds -- check conditions
-        [ (list
-           (list upper-left toe upper-right)
-           (list lower-left ctoe lower-right))
 
 
-          (if (and
-               ;toehold must not be last domain in upper strand
-               (not (null? upper-right))
-               ; but it must be last domain in lower strand
-               (null? lower-right)
-               ; reaction must lead to migration or displacement
-               (equal? (car upper-right) (car s)))
-
-              (match (prefix-match upper-right s)
-
-                [ (list prefix rest-branch rest-gate)
-
-                  (if (equal? rest-gate '())
-                      ; nothing else on gate; strand displacement
-                      (list
-                       (upper-strand (append lu prefix ru))
-                       (gate
-                        (upper-strand upper-left)
-                        (lower-strand lower-left)
-                        (duplex-strand  (cons toe prefix))
-                        (lower-strand rl)
-                        (upper-strand rest-branch)))
-
-                      ; stuff left on gate; branch migration
-                      (list
-                       (gate:
-                        (gate
-                         (upper-strand upper-left)
-                         (lower-strand lower-left)
-                         (duplex-strand (cons toe prefix))
-                         (lower-strand '())
-                         (upper-strand rest-branch))
-                        (gate
-                         (upper-strand (append lu prefix))
-                         (lower-strand '())
-                         (duplex-strand rest-gate)
-                         (lower-strand rl)
-                         (upper-strand ru))))) ])
-
-              ; conditions do not hold -- rule does not fire
-              '()) ]) ]
-
-    ; rule did not match
-    [ (_ _) '() ]))
 
 
 ; tests commented out during major rework
