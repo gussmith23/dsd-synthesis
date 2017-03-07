@@ -2,6 +2,7 @@
 
 (require rosette/lib/match)
 (require rosette/lib/synthax)
+(require rosette/lib/angelic)
 
 (provide
  ; domains are toeholds, complements, or ids ('integer?'s)
@@ -20,6 +21,7 @@
 
  domain-cat-?? ; a function that takes a length k and returns a symbolic domain list of size up to k
  gate-??       ; a macro that takes a length k and returns a symbolic gate with each strand being up to size k
+ domain-hole
 )
 
 ; Checking for equality between ids are all we need to implement
@@ -90,6 +92,15 @@
       (gate-struct? g1) (valid-dna-struct? g1)
       (gate-struct? g2) (valid-dna-struct? g2))]
     [_ #f]))
+
+
+(define (domain-hole)
+  (choose*
+   (choose* 1 2 3 4)
+   (complement (choose* 1 2 3 4))
+   (toehold (choose* 5 6 7 8))
+   (complement (toehold (choose* 5 6 7 8)))))
+
 
 (define-synthax (domain-cat-?? k)
   #:base
