@@ -33,6 +33,8 @@
  ;                Errors if an integer in input has no corresponding name.
  ;                By default uses the same default global symbol table as string->species.
  species->string
+ system->dsd
+ dsd->system
 )
 
 ; The default symbol table used by string->species and species->string
@@ -143,3 +145,19 @@
           )
     )
   )
+
+(define (system->dsd system)
+  (string-append
+   "("
+   (foldr
+    (lambda (s1 s2)
+      (if (equal? s2 "")
+          (string-append s1 "\n)" s2)
+          (string-append s1 "\n|" s2)))
+    ""
+    (map species->string system))))
+
+(define (dsd->system dsd)
+  (map string->species
+       (string-split (string-trim dsd (regexp "\\(|\n\\)")) "\n|")))
+
