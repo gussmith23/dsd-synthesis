@@ -46,6 +46,8 @@
                                     (thunk (if (integer? id) (~a id) (error "Id not found:" id)))))
   (define (to-string input)
     (match input
+      [(? union? input) "??"]
+      [(? expression? input) "??"]
       [(toehold id) (string-append (to-string id) "^")]
       [(complement id-or-toehold) (string-append (to-string id-or-toehold) "*")]
       [(upper-strand domain-list) (string-append "<" (to-string domain-list) ">")]
@@ -112,7 +114,14 @@
     ))
 
 (define (parse-domain-string input symbol-table)
-  (filter (lambda (e) (not (null? e))) (map (lambda (input) (parse-sequence-string input symbol-table)) (string-split input))))
+  (filter
+   (lambda (e) (not (null? e)))
+   (map
+    (lambda (input)
+      (if (regexp-match (regexp "^\\?\\?$") input)
+          (domain-hole)
+          (parse-sequence-string input symbol-table)))
+    (string-split input))))
 
 (define (parse-upper-strand-string input symbol-table)
   (upper-strand (parse-domain-string (string-trim input (regexp "<|>")) symbol-table)))
