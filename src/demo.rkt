@@ -27,6 +27,10 @@
            ; the output is not null
            (not (null? output))
            
+           ; it is distinct from the inputs
+           (not (equal? output input-1))
+           (not (equal? output input-2))
+
            ; at least one parent reaction is non null
            (ormap (lambda (parent) (not (null? parent))) parent-reactions)
 
@@ -67,7 +71,8 @@ EOF
   (if (sat? sol)
       (display (system->dsd (evaluate sketch sol)))
       (display (unsat)))
-  (clear-asserts!))
+  (clear-asserts!)
+  sol)
 
 ; Example 2 -- OR gate system
 (define (or-system? system)
@@ -90,6 +95,10 @@ EOF
           (and
            ; the output is not null
            (not (null? output))
+
+           ; it is distinct from the inputs
+           (not (equal? output input-1))
+           (not (equal? output input-2))
 
            ; there exists a parent reaction that needs input 1 but not input 2
            (ormap
@@ -133,6 +142,7 @@ EOF
 |{??}[?? ??]<?? ??>
 |{??}[?? ??]<?? ??>
 |{??}[?? ??]<?? ??>
+)
 EOF
    ))
 
