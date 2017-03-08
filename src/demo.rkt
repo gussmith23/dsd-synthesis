@@ -3,6 +3,7 @@
 (require "dna-syntax.rkt")
 (require "interpreter.rkt")
 (require "dna-string-parser.rkt")
+(require "reduction-rules.rkt")
 
 ; Example 1 -- AND gate system
 (define (and-system? system)

@@ -23,7 +23,13 @@
  rule-rgl
 
  (struct-out reaction)
+ allow-unbindings!
+ disallow-unbindings!
  )
+
+(define allow-unbindings #f)
+(define (allow-unbindings!) (set! allow-unbindings #t))
+(define (disallow-unbindings!) (set! allow-unbindings #f))
 
 (struct reaction (strand-in gate-in strand-out gate-out) #:transparent)
 (define (no-reaction s1 s2) (reaction s1 s2 '() '()))
@@ -83,7 +89,6 @@
 
   (prefix-match-aux branch gate '()))
 
-
 (define (rule-rp strand-in gate-in)
   (match* (strand-in gate-in)
     [ ((upper-strand upper-domains)
@@ -117,8 +122,10 @@
 
                 [ (list prefix rest-branch rest-gate)
 
-                  (if (equal? rest-gate '())
-                      ; nothing else on gate; strand displacement
+                  (cond
+                    ; nothing else on gate; strand displacement
+                    [ (null? rest-gate)
+
                       (reaction
                        strand-in gate-in
                        (upper-strand (append lu prefix ru))
@@ -127,9 +134,32 @@
                         (lower-strand lower-left)
                         (duplex-strand  (cons toe prefix))
                         (lower-strand rl)
-                        (upper-strand rest-branch)))
+                        (upper-strand rest-branch))) ]
 
-                      ; stuff left on gate; branch migration
+                    ; only thing left is toehold -- trigger unbinding
+                    ; NB: since unbinding is not a "fast reaction"
+                    ; it should not technically be merged in here
+                    ; according to the "default" semantics,
+                    ; but it is okay for this prototype.
+                    [ (and allow-unbindings
+                           (or (toehold? (car rest-gate))
+                               (and (complement? (car rest-gate))
+                                    (toehold?
+                                     (complement-id-or-toehold (car rest-gate)))))
+                           (null? (cdr rest-gate)))
+
+                      (reaction
+                       strand-in gate-in
+                       (upper-strand (append lu prefix rest-gate ru))
+                       (gate
+                        (upper-strand upper-left)
+                        (lower-strand lower-left)
+                        (duplex-strand (cons toe prefix))
+                        (lower-strand (cons (car rest-gate) rl))
+                        (upper-strand rest-branch))) ]
+
+                    ; stuff left on gate; branch migration
+                    [ else
                       (reaction
                        strand-in gate-in
                        '()
@@ -145,7 +175,7 @@
                          (lower-strand '())
                          (duplex-strand rest-gate)
                          (lower-strand rl)
-                         (upper-strand ru))))) ])
+                         (upper-strand ru)))) ]) ])
 
               ; conditions do not hold -- rule does not fire
               (no-reaction strand-in gate-in)) ]) ]
