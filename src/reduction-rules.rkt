@@ -2,6 +2,7 @@
 
 (require rosette/lib/match)
 (require "dna-syntax.rkt")
+(require "strand-manipulation.rkt")
 
 (provide
  ; unary rules:
@@ -155,7 +156,7 @@
                         (upper-strand upper-left)
                         (lower-strand lower-left)
                         (duplex-strand (cons toe prefix))
-                        (lower-strand (cons (car rest-gate) rl))
+                        (lower-strand (cons (complement-of-domain (car rest-gate)) rl))
                         (upper-strand rest-branch))) ]
 
                     ; stuff left on gate; branch migration
