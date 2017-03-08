@@ -28,7 +28,7 @@
  disallow-unbindings!
  )
 
-(define allow-unbindings #f)
+(define allow-unbindings #t)
 (define (allow-unbindings!) (set! allow-unbindings #t))
 (define (disallow-unbindings!) (set! allow-unbindings #f))
 
