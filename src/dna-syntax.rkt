@@ -97,7 +97,6 @@
 (define (domain-hole)
   (choose*
    (choose* 1 2 3 4)
-   (complement (choose* 1 2 3 4))
    (toehold (choose* 5 6 7 8))
    (complement (toehold (choose* 5 6 7 8)))))
 
