@@ -5,6 +5,8 @@
 (require "dna-string-parser.rkt")
 (require "reduction-rules.rkt")
 
+(current-bitwidth #f)
+
 ; Example 1 -- AND gate system
 (define (and-system? system)
   (let* ([reactions (enumerate-reactions system)]
