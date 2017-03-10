@@ -131,26 +131,24 @@ default semantics, instead. Our results are based on the default semantics.
 
 \subsection{Syntactic Encoding}
 
-The core syntactic unit of the DSD language is a \emph{domain}, which is an
-identifier that represents a unique sequence of DNA bases.  Identifiers ending
-in a \lstinline{^} symbol represent short (also called \emph{toehold}) domains,
-while all other identifiers represent long domains. The identity of the
-individual bases in the sequence is left abstract, but distinct identifiers are
-assumed to map to non-interfering sequences. 
-
-DSD also specifies a \emph{complement} operation on domains, which is denoted
-with a \lstinline{*} symbol after the identifier. This represents the
-Watson-Crick complement of the sequence, where \lstinline{A} and \lstinline{T}
+The core syntactic unit of DSD is a \emph{domain}, which identifies
+a unique sequence of DNA bases.  Identifiers ending
+in a \lstinline{^} represent short (or \emph{toehold}) domains,
+while all other identifiers represent long domains.
+Individual bases in the sequence are arbitrary, but distinct identifiers must
+map to non-interfering sequences.
+Every domain has a \emph{complement}, which is denoted
+with a \lstinline{*} after the identifier. A domain's complement is
+the Watson-Crick complement of the underlying bases: \lstinline{A} and \lstinline{T}
 are complementary, and \lstinline{C} and \lstinline{G} are complementary.  
-For example, if \lstinline{1^} represents \lstinline{ACTG}, then \lstinline{1^*}
-represents \lstinline{TGAC}.
+For example, if \lstinline{1^} is \lstinline{ACTG}, then \lstinline{1^*}
+is \lstinline{TGAC}.
 
-DNA molecules in solution exist in both single and double-stranded forms.
-In double-stranded DNA, a sequence of bases is bound with its complementary
-sequence. These forms are expressed in DSD as \emph{strands} and \emph{gates}.
-A \emph{strand} is a single-stranded sequence of zero or more domains, for
-example \verb;<1 2 3>;. This can also be written as the rotationally symmetric
-form \verb;{3 2 1};.
+DNA in solution can be either single or double-stranded.
+In double-stranded DNA, a sequence of bases is bound with its complement.
+In DSD, a \emph{strand} is a single-stranded sequence of zero or more domains, for
+example \verb;<1 2 3>; (which can also be written as the rotationally symmetric
+\verb;{3 2 1};).
 A \emph{gate} is a double-stranded sequence of one or more domains,
 along with optional single-stranded overhangs on the top and bottom of each
 side, for example \verb;<1>{2}[3 4]{5}<6>;.
@@ -159,12 +157,12 @@ are gates, upper-strand sharing is written \verb;G1::G2; and lower-strand
 sharing is written \verb;G1:G2;.
 
 Our encoding of DSD's syntactic constructs is straightforward.
-Long domains are represented as non-negative integers, while
-short domains are non-negative integers wrapped in a \verb;toehold; struct.
+Long domains are encoded as integers, while
+short domains are integers wrapped in a \verb;toehold; struct.
 The complement operation is also a \verb;struct;.
-Sequences of domains are represented as lists, and strands are lists
+Sequences of domains are encoded as lists, and strands are lists
 tagged with the type (upper, lower, or double-stranded). Gates
-are a five-tuple consisting of their constituent strands.
+are a five-tuple of their constituent strands.
 Example syntactic encodings are shown in Table~\ref{table:encoding-example}.
 
 \begin{table}
