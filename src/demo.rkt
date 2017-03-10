@@ -47,7 +47,7 @@
             
         outputs))))
 
-(define and-system
+(define example-1
   (dsd->system
    #<<EOF
 (<1^ 2>
@@ -73,8 +73,7 @@ EOF
   (if (sat? sol)
       (display (system->dsd (evaluate sketch sol)))
       (display (unsat)))
-  (clear-asserts!)
-  sol)
+  (clear-asserts!))
 
 ; Example 2 -- OR gate system
 (define (or-system? system)
@@ -122,9 +121,7 @@ EOF
         outputs))))
 
 
-
-
-(define or-system
+(define example-2
   (dsd->system
    #<<EOF
 (<0 t^ 1 t^>
@@ -147,6 +144,3 @@ EOF
 )
 EOF
    ))
-
-
-
