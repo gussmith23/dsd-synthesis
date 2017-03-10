@@ -311,8 +311,8 @@
   (require "dna-string-parser.rkt")
   (require "test.rkt")
 
-  (define test-gate-1 (string->species "<L1>{L1b}[S1]{R1b}<R1>:<L2>{S L2b}[S2]{R2b}<R2>"))
-  (define expected-output-1 (string->species "<L1>{L1b}[S1]{R1b S L2b}<R1>:<L2>[S2]{R2b}<R2>"))
+  (define test-gate-1 (string->species "<1>{2}[3]{4}<5>:<6>{7 8}[9]{10}<11>"))
+  (define expected-output-1 (string->species "<1>{2}[3]{4 7 8}<5>:<6>[9]{10}<11>"))
 
   (check-equal?
    (valid-dna-struct? test-gate-1)
@@ -349,8 +349,8 @@
    (complement 0) "Test complementing a lone id")
 
   (test-exact
-   (species->string (zip-up-duplex (string->species "<a b c>{d b* c*}[mid]{x* y* z*}<x y z>")))
-   "<a>{d}[b c mid z y x]"
+   (species->string (zip-up-duplex (string->species "<1 2 3>{4 2* 3*}[5]{6* 7* 8*}<6 7 8>")))
+   "<1>{4}[2 3 5 8 7 6]"
    "Test zip-up-duplex")
   
   (test-exact
@@ -359,13 +359,13 @@
    "Test complementing a domain list")
 
   (test-exact
-   (rotate-species (string->species "<A B C>"))
-   (string->species "{C B A}")
+   (rotate-species (string->species "<1 2 3>"))
+   (string->species "{3 2 1}")
    "Test rotation of upper strand")
 
   (test-exact
-   (rotate-species (string->species "{A B C}"))
-   (string->species "<C B A>")
+   (rotate-species (string->species "{1 2 3}"))
+   (string->species "<3 2 1>")
    "Test rotation of lower strand")
 
   ; Expensive synthesis tests
