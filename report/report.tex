@@ -8,6 +8,7 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{wrapfig}
 
 \lstset{basicstyle=\ttfamily}
 \lstset{keywordstyle=\ttfamily\bfseries}
@@ -151,10 +152,11 @@ A \emph{strand} is a single-stranded sequence of zero or more domains, for
 example \verb;<1 2 3>;. This can also be written as the rotationally symmetric
 form \verb;{3 2 1};.
 A \emph{gate} is a double-stranded sequence of one or more domains,
-along with single-stranded overhangs on the top and bottom of each side,
-for example \verb;<1>{2}[3 4]{5}<6>;.
+along with optional single-stranded overhangs on the top and bottom of each
+side, for example \verb;<1>{2}[3 4]{5}<6>;.
 Two gates may also share an upper or lower strand. If \verb;G1; and \verb;G2;
-are gates, the upper is written \verb;G1::G2; and the lower \verb;G1:G2;.
+are gates, upper-strand sharing is written \verb;G1::G2; and lower-strand
+sharing is written \verb;G1:G2;.
 
 Our encoding of DSD's syntactic constructs is straightforward.
 Long domains are represented as non-negative integers, while
@@ -163,7 +165,7 @@ The complement operation is also a \verb;struct;.
 Sequences of domains are represented as lists, and strands are lists
 tagged with the type (upper, lower, or double-stranded). Gates
 are a five-tuple consisting of their constituent strands.
-Examples syntactic encodings are shown in Table~\ref{table:encoding-example}.
+Example syntactic encodings are shown in Table~\ref{table:encoding-example}.
 
 \begin{table}
 \begin{tabular}{|l|l|l|} \hline
@@ -190,36 +192,34 @@ Gate          & \verb;<1>{2^*}[3 4]{5}; &
 \end{table}
 
 \subsection{Semantic Encoding}
+\subsubsection{Reduction Rules}
 DSD models the behavior of DNA strand displacement reactions with
 \emph{reduction rules}. Each rule is a pattern-based rewrite rule
 that models the conditions for and outcomes of a known reaction
 involving DNA molecules. Reduction rules are also associated with
 reaction rates, which model the kinetics of that chemical reaction.
 
-To generate the reaction network for a given set of input species,
-%todo put the word species before somewhere because it's pretty useful
-reduction rules are applied to exhaustion (until no new species are produced).
-The DSD specification refers to the set of reduction rules applied
+The DSD specification refers to the set of reduction rules being used
 as the level of \emph{semantic abstraction}, and they define four such levels.
 The more more refined levels
-use more rules, and produce more intermediate species. The 
+use more rules, and produce more intermediate species. The
 coarser abstractions use fewer rules (and merge some rules together), thus
 eliding intermediate species.
 
 Our encoding implements the coarsest level of semantic abstraction, which DSD
 refers to as the \emph{infinite} abstraction. This abstraction only has one
-rule, rule RP, which describes binding interactions between two strands that can
-potentially lead to a strand displacement (where a single strand is released
-from a gate). The infinite abstraction also specifies that the strand
-displacement itself (which is another reduction rule, RD), is merged
-into the reaction.
+rule, rule RP, which describes binding interactions between a strand and a gate
+that can potentially lead to a strand displacement reaction (where a strand is
+released from the gate). The infinite abstraction also allows for the strand
+displacement reaction itself (which is specified by another reduction rule, RD)
+to be merged into the reaction.
 
 Rules RP and RD, and an outline of their merged encoding in Rosette are shown in
 Figure~\ref{figure:example-rule}. The outermost \verb;match*; expression
 performs a purely syntactic match to determine whether the species are
 of the correct type, and to bind their fields to variable names.
 
-\begin{figure}
+\begin{figure}[h]
 
 \begin{subfigure}[c]{0.5\textwidth}
 \includegraphics[width=\textwidth]{figures/rule-merge.png}
@@ -259,7 +259,7 @@ of the correct type, and to bind their fields to variable names.
 \end{lstlisting}
 \end{subfigure}
 \caption{
-Rules RP and RD, and their encoding as a merged rule, \lstinline{rule-rp} in
+DSD rules RP and RD, and their encoding as a merged rule, \lstinline{rule-rp} in
 Rosette.  On the left, all identifiers (\lstinline{S}, \lstinline{R2}, etc.)
 represent domain concatenations (lists of domains), except for \lstinline{N},
 which represents a single toehold domain.
@@ -274,55 +274,96 @@ which is a 4-tuple containing the input strand and gate, and the
 output strand and gate. The empty list is used in
 cases where a product is not produced.
 
-To produce the reaction graph, instead of applying the rule until
-no new species are introduced, \textcolor{red}{Kendall fell asleep.}
+\subsubsection{Reaction Graphs}
 
-\subsection{Solver-Aided Queries}
+Given a set of input species, DSD computes a \emph{reaction graph} by applying
+reduction rules to exhaustion (until no new species are produced). The vertices
+of the graph are individual species, and edges between species indicate
+reactions, weighted by the reaction rate. Reactions that require two species
+join the edges from the two input species into a single edge leading to the
+output. Reactions may also be reversible, indicated by a back edge from the
+outputs to the inputs.
 
-Something something \verb;choose*; something something \textcolor{red}
-{Kendall fell asleep.}
+This graph
+and its properties constitute the \emph{meaning} of a DSD program.
+The reactions and their corresponding weights can be used to simulate
+the progress of the system over time. At a coarser level of abstraction,
+if we ignore rates, the structure of the graph can tell us whether or not
+it is capable of carrying a particular meaning. The reaction
+graph for a system representing an AND gate is shown in
+Figure~\ref{figure:and-gate}. This system represents an AND gate
+because all reactions that produce the strand \verb;<2 3>;
+require (either directly or indirectly) both of the inputs.
+
+We can write this requirement as a predicate in first-order logic, as
+follows. Given a reaction graph $g$, and input strands $i_1$ and $i_2$:
+\begin{equation}
+\mathrm{isAndSystem}(g, i_1, i_2) =
+\exists x \in \mathrm{strands}(g)\ .\ 
+\forall p \in \mathrm{parents}_g(x)\ .\ 
+\mathrm{requires}_g(p, i_1) \land \mathrm{requires}_g(p, i_2)
+\label{eq:and-sys}
+\end{equation}
+
+Here, the function $\mathrm{strands}(g)$ returns the set of single strands in
+the reaction graph $g$, and the function $\mathrm{parents}_g(x)$ returns
+the set of parent reactions of the strand $x$ in graph $g$. The predicate 
+$\mathrm{requires}_g(p,i)$ is true if the reaction $p$ cannot happen
+(either directly or indirectly) without the strand $i$ in graph $g$.
+It is easy to see that this predicate is satisfied for the graph in
+Figure~\ref{figure:and-gate}.
 
 \begin{figure}
-\[\mathrm{isAndSystem}(g, i_1, i_2) =
-\exists x \in \mathrm{strands}(g)\ .\ 
-\forall p \in \mathrm{parents}(x, g)\ .\ 
-\mathrm{requires}(p, i_1) \land \mathrm{requires}(p, i_2)\]
-\begin{align*}
-\mathrm{isOrSystem}(g, i_1, i_2) = & \ 
-\exists x \in \mathrm{strands}(g)\ .
-\\
-& \ (\exists p \in \mathrm{parents}(x)\ .\ 
-\mathrm{requires}(p, i_1) \land \lnot \mathrm{requires}(p, i_2))
-\\
-\land & \ 
-(\exists p \in \mathrm{parents}(x)\ .\ 
-\lnot \mathrm{requires}(p, i_1) \land \mathrm{requires}(p, i_2))
-\end{align*}
+\centering
+\includegraphics[width=0.5\textwidth]{figures/and-gate.png}
 \caption{
-First-order predicates over a reaction network
-$g$ given input strands $i_1$ and $i_2$.
+The result of compiling the DSD program
+\texttt{(<1\^{} 2>|<3 4\^{}>|\{1\^{}*\}[2 3]\{4\^{}*\})}
 }
+\label{figure:and-gate}
 \end{figure}
 
-\textcolor{red}{
-Needs some more flow/context, could be in this subsection,
-or in section 2 with less detail
-\\
-As we were working on writing the rule functions, we originally were
-verifying the rules through traditional \emph{ad hoc} testing. But,
-since we were working in Rosette, once synthax was defined for domain
-concatenations we were able to write a series of tests that verify
-properties of rules (such as that the presence of the products in the
-result implies the presence of the reactants in the original system)
-for bounded domain concatenations of up to some size $k$ (because our
-tests were being run on a CI server on each commit, they were
-typically restricted to $k=2$ or $k=3$). We found the ability to write
-these tests to be a very useful property of a solver-aided language;
-we were much more confident that the (complex) rule implementations
-were correct once we had verified them for small domain
-concatenations.
-}
+\subsection{Solver-Aided Queries}
+\subsubsection{"Synthesizing" DSD Programs}
+Our goal is to apply a first-order predicate such as Equation~\ref{eq:and-sys}
+to a reaction graph where the identity of one or more domains in the input
+species is left symbolic, and then ask a solver to find bindings for the
+symbolic variables such that the predicate is satisfied.
 
+However, as specified by DSD, compiling a reaction graph requires applying
+reduction rules until no new species are generated; this poses a problem
+for symbolic execution, because the termination of this algorithm
+depends on the identity of the species, and termination cannot be
+predicated on symbolic values. Therefore, we finitize the computation
+of the reaction graph by only considering a very small number of possible
+reactions: the reactions between the initial species, and between
+the products of those reactions and the initial species. The
+resulting reaction graph will have a concrete size for a given
+number of input strands and gates. Moreover, this finitization
+is sufficiently powerful to reason about small systems such as the one
+depicted in Figure~\ref{figure:and-gate}, where all relevant reactions
+involve at least one of the input species and no relevant reaction
+involves only intermediate products.
+
+Since all reaction graphs are of a finite size and concrete shape,
+writing a predicate such as the one in Equation~\ref{eq:and-sys} is
+simple: sets are represented as lists, and we use Rosette's \verb;ormap; for
+existential quantification and \verb;andmap; for universal quantification.
+Applying this predicate to a reaction graph with symbolic inputs results
+in a formula that can be passed to Rosette's \verb;solve; procedure.
+Strictly speaking, this process is not inductive synthesis because it
+does not require universal quantification over inputs -- we are simply
+asking the solver to fill in a finite number of domain "holes" such that the
+predicate is satisfied.
+
+\subsubsection{Verified Continuous Integration}
+As we were working on writing reduction rules, we were originally
+checking our code with traditional \emph{ad hoc} testing. But,
+since we were working in Rosette, we were able to use the \verb;verify;
+form to check semantic properties of the rules and find bugs in the
+form of counterexamples.  These verified tests were also used as regression
+tests, and run by our CI server on each commit to help ensure that our code
+stayed correct.
 
 \section{Results}
 
