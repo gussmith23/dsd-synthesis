@@ -4,7 +4,7 @@
 
 (require "grapher.rkt" "dna-syntax.rkt" "interpreter.rkt")
 
-(define and-test-system
+#;(define and-test-system
     (list
      (upper-strand (list (toehold 1) 2))
      (upper-strand (list 3 (toehold 4)))
@@ -18,4 +18,4 @@
 ;(dot "/usr/local/bin/dot") ; your dot installation directory
 ;(dot-string->png (get-dot-graph-string (compile and-test-system (initial-state -1))))
 
-(printf (get-dot-graph-string (compile and-test-system (initial-state -1))))
+#;(printf (get-dot-graph-string (compile and-test-system (initial-state -1))))

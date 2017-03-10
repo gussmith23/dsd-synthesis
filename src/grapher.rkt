@@ -9,7 +9,7 @@
          )
 
 ; Returns a string parsable by GraphViz dot to visualize the reaction in the given state s
-(define (get-dot-graph-string s)
+#;(define (get-dot-graph-string s)
   ; Translation table
   (define species->name-table (make-hash))
 
@@ -67,10 +67,10 @@
 
 
 ; This parameter holds the absolute path to the dot executable.
-(define dot 
+#;(define dot 
   (make-parameter (find-executable-path "dot")))
 
-(define (dot-string->png graph-string)
+#;(define (dot-string->png graph-string)
   ; open dot
   (define-values (p p-out p-in p-err)
     (subprocess #f #f #f (dot) "-Tpng"))
