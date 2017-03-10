@@ -192,3 +192,56 @@
 
     [ (_ _) (no-reaction strand-in gate-in) ]))
 
+(module+ test
+  (require rackunit)
+  (require "dna-string-parser.rkt")
+
+  (define (solver-check checker-func args)
+    (define formula (apply checker-func args))
+    (define cex (solve (assert (not formula))))
+    (if (sat? cex) (map (λ (x) (display (species->string (evaluate x cex)))) args)
+    (check-equal? cex (unsat)))
+    (clear-asserts!))
+
+  (define test-strand (upper-strand (domain-cat-?? 4)))
+  
+  (define test-gate
+    (gate
+     (upper-strand (domain-cat-?? 2))
+     (lower-strand (domain-cat-?? 2))
+     (duplex-strand (domain-cat-?? 2))
+     (lower-strand (domain-cat-?? 2))
+     (upper-strand (domain-cat-?? 2))))
+
+  (define-symbolic a integer?)
+
+  (define (check-rp-forwards g s a)
+    (=>
+     ; if...
+     (and
+      ; (toehold a) is in the 2nd position from the front on the test strand
+      (equal? (toehold a) (second (upper-strand-domain-list s)))
+      ; and (complement (toehold a)) is in the bottom left section of the gate
+      (member (complement (toehold a)) (lower-strand-domain-list (gate-left-lower g))))
+
+     ; then (toehold a) should be at the start of the resulting gate duplex
+     (equal? (toehold a) (first (duplex-strand-domain-list (gate-duplex (reaction-gate-out (rule-rp s g))))))))
+
+  (define (check-rp-backwards g s a)
+    (=>
+     ; if (toehold a) should be at the start of the resulting gate duplex
+     (equal? (toehold a) (first (duplex-strand-domain-list (gate-duplex (reaction-gate-out (rule-rp s g))))))
+
+     ; then...
+     (and
+      ; (toehold a) is in the 2nd position from the front on the test strand
+      (equal? (toehold a) (second (upper-strand-domain-list s)))
+      ; and (complement (toehold a)) is in the bottom left section of the gate
+      (member (complement (toehold a)) (lower-strand-domain-list (gate-left-lower g))))))
+
+  ; check both that the presence of the product of rp requires its inputs,
+  ; and that the inputs being present implies the that the prodcuct will be produced.
+  (solver-check check-rp-forwards (list test-gate test-strand a))
+  (solver-check check-rp-backwards (list test-gate test-strand a))
+
+  )
