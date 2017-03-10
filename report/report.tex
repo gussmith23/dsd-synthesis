@@ -3,6 +3,16 @@
 \usepackage{fullpage}
 \usepackage{parskip}
 \usepackage{color}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\lstset{basicstyle=\ttfamily}
+\lstset{keywordstyle=\ttfamily\bfseries}
+\lstset{language=LISP}
+\lstset{columns=fullflexible}
 
 \begin{document}
 \title{Program Synthesis for DNA Strand Displacement}
@@ -118,49 +128,186 @@ default semantics, instead. Our results are based on the default semantics.
 
 \section{Algorithms and Encodings}
 
-\textcolor{red}{Describe our use of transparent structs in Rosette,
-  and the use of rule functions, etc. Maybe also mention the solver
-  aided tests?}
+\subsection{Syntactic Encoding}
 
-Each DSD semantics is presented as a series of reduction rules on DNA
-strands.  To implement this in Rosette, we developed a grammar (based
-on an incomplete one given by the DSD paper~\cite{dsd}) that describes
-the possible structures of DNA strand displacement reactions. We omit
-a full description of the grammar here, but cover some important
-structures.  A \emph{domain} is a unique string of bases (i.e. the
-CATG proteins that make up DNA); all domains in a system are assumed
-to not bond with any other domains other than their
-\emph{complement}---the domain with the exact opposite series of
-bases. We represent domains by integers, so in a given system domain 0
-might stand for TCAT and 1 might stand for GGACG, but our encoding
-abstracts those particulars away. A \emph{strand} consists of a
-\emph{domain concatentation} (one or more domains) and an orientation:
-either upper or lower.  A \emph{gate} consists of two strands (one
-upper and one lower) that overlap in at least domain---meaning that
-the upper domain must contain the complement of at least one of the
-lower domains. All of these constructs are represented as transparent
-structures in Rosette, but synthax is only defined for domain
-concatenations \textcolor{red}{TODO: why is this? Is Kendall changing
-  this right now? It seems like with synthax only defined for domain
-  cats it's tough to synthesize an AND gate...}.
+The core syntactic unit of the DSD language is a \emph{domain}, which is an
+identifier that represents a unique sequence of DNA bases.  Identifiers ending
+in a \lstinline{^} symbol represent short (also called \emph{toehold}) domains,
+while all other identifiers represent long domains. The identity of the
+individual bases in the sequence is left abstract, but distinct identifiers are
+assumed to map to non-interfering sequences. 
 
-We implemented the reduction rules as functions on these DNA
-structures.  Each rule function checks if the preconditions for the
-rules are present and then applies the rule if they are; our
-interpreter tries all the rules successively at each step in an
-arbitrary order until the system reaches fixpoint. Reasoning about
-this step is difficult for the solver, which is why we needed to
-switch from the detailed to the default semantics (as the default
-semantics requires fewer rule applications to achieve the same result
-since the rules are more complex). As a further optimization, we
-restrict the number of domains by requiring each domain to be
-represented by an integer between 0 and \textcolor{red}{16 (I think)};
-this speeds up the solver considerably by reducing the search space
-but limits us to reactions that involve \textcolor{red}{16} or fewer
-domains. Since we are looking for small reactions, this is acceptable
-for now, but would need to be addressed (perhaps by parameterizing
-it?) for a more complete system.
+DSD also specifies a \emph{complement} operation on domains, which is denoted
+with a \lstinline{*} symbol after the identifier. This represents the
+Watson-Crick complement of the sequence, where \lstinline{A} and \lstinline{T}
+are complementary, and \lstinline{C} and \lstinline{G} are complementary.  
+For example, if \lstinline{1^} represents \lstinline{ACTG}, then \lstinline{1^*}
+represents \lstinline{TGAC}.
 
+DNA molecules in solution exist in both single and double-stranded forms.
+In double-stranded DNA, a sequence of bases is bound with its complementary
+sequence. These forms are expressed in DSD as \emph{strands} and \emph{gates}.
+A \emph{strand} is a single-stranded sequence of zero or more domains, for
+example \verb;<1 2 3>;. This can also be written as the rotationally symmetric
+form \verb;{3 2 1};.
+A \emph{gate} is a double-stranded sequence of one or more domains,
+along with single-stranded overhangs on the top and bottom of each side,
+for example \verb;<1>{2}[3 4]{5}<6>;.
+Two gates may also share an upper or lower strand. If \verb;G1; and \verb;G2;
+are gates, the upper is written \verb;G1::G2; and the lower \verb;G1:G2;.
+
+Our encoding of DSD's syntactic constructs is straightforward.
+Long domains are represented as non-negative integers, while
+short domains are non-negative integers wrapped in a \verb;toehold; struct.
+The complement operation is also a \verb;struct;.
+Sequences of domains are represented as lists, and strands are lists
+tagged with the type (upper, lower, or double-stranded). Gates
+are a five-tuple consisting of their constituent strands.
+Examples syntactic encodings are shown in Table~\ref{table:encoding-example}.
+
+\begin{table}
+\begin{tabular}{|l|l|l|} \hline
+Construct     & DSD Syntax    & Encoding                      \\ \hline
+Long Domain   & \verb;0;      & \verb;0;                      \\ \hline
+Toehold       & \verb;1^;     & \verb;(toehold 1);            \\ \hline
+Complement    & \verb;1^*;    & \verb;(complement (toehold 1)); \\ \hline
+Upper Strand  & \verb;<0 1^>; & \verb;(upper-strand (list 0 (toehold 1))); \\
+\hline
+Gate          & \verb;<1>{2^*}[3 4]{5}; &
+\begin{lstlisting}
+(gate
+  (upper-strand (list 1))
+  (lower-strand (list (complement (toehold 2))))
+  (duplex-strand (list 3 4))
+  (lower-strand (list 5))
+  (upper-strand '()))
+\end{lstlisting}
+\\
+\hline
+\end{tabular}
+\caption{Example of syntactic encoding.}
+\label{table:encoding-example}
+\end{table}
+
+\subsection{Semantic Encoding}
+DSD models the behavior of DNA strand displacement reactions with
+\emph{reduction rules}. Each rule is a pattern-based rewrite rule
+that models the conditions for and outcomes of a known reaction
+involving DNA molecules. Reduction rules are also associated with
+reaction rates, which model the kinetics of that chemical reaction.
+
+To generate the reaction network for a given set of input species,
+%todo put the word species before somewhere because it's pretty useful
+reduction rules are applied to exhaustion (until no new species are produced).
+The DSD specification refers to the set of reduction rules applied
+as the level of \emph{semantic abstraction}, and they define four such levels.
+The more more refined levels
+use more rules, and produce more intermediate species. The 
+coarser abstractions use fewer rules (and merge some rules together), thus
+eliding intermediate species.
+
+Our encoding implements the coarsest level of semantic abstraction, which DSD
+refers to as the \emph{infinite} abstraction. This abstraction only has one
+rule, rule RP, which describes binding interactions between two strands that can
+potentially lead to a strand displacement (where a single strand is released
+from a gate). The infinite abstraction also specifies that the strand
+displacement itself (which is another reduction rule, RD), is merged
+into the reaction.
+
+Rules RP and RD, and an outline of their merged encoding in Rosette are shown in
+Figure~\ref{figure:example-rule}. The outermost \verb;match*; expression
+performs a purely syntactic match to determine whether the species are
+of the correct type, and to bind their fields to variable names.
+
+\begin{figure}
+
+\begin{subfigure}[c]{0.5\textwidth}
+\includegraphics[width=\textwidth]{figures/rule-merge.png}
+\end{subfigure}
+~
+\begin{subfigure}[c]{0.5\textwidth}
+\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+(define (rule-rp strand-in gate-in)
+  (match* (strand-in gate-in)
+    [ ((upper-strand upper)
+
+       (gate
+        (upper-strand left-upper)
+        (lower-strand left-lower)
+        (duplex-strand duplex)
+        (lower-strand right-lower)
+        (upper-strand right-upper)))
+
+      (match (toehold-search upper left-lower)
+        ; no matching toehold, no reaction
+        [ '() (reaction strand-in gate-in '() '()) ]
+
+        ; matching toeholds
+        [ (list ...)
+
+          ; conditional merge with other rules
+          (cond
+            ...
+            ; strand displacement
+            [ ...
+               (reaction
+                strand-in gate-in
+                (upper-strand ...)
+                (gate ...)) ]) ]) ]
+
+    [ (_ _) (reaction strand-in gate-in '() '()) ]))
+\end{lstlisting}
+\end{subfigure}
+\caption{
+Rules RP and RD, and their encoding as a merged rule, \lstinline{rule-rp} in
+Rosette.  On the left, all identifiers (\lstinline{S}, \lstinline{R2}, etc.)
+represent domain concatenations (lists of domains), except for \lstinline{N},
+which represents a single toehold domain.
+}
+\label{figure:example-rule}
+\end{figure}
+
+The inner \verb;match; and \verb;cond;
+expressions discover whether the domains of the input species satisfy
+the requirements of the rule. If so, the result is a \verb;reaction;,
+which is a 4-tuple containing the input strand and gate, and the
+output strand and gate. The empty list is used in
+cases where a product is not produced.
+
+To produce the reaction graph, instead of applying the rule until
+no new species are introduced, \textcolor{red}{Kendall fell asleep.}
+
+\subsection{Solver-Aided Queries}
+
+Something something \verb;choose*; something something \textcolor{red}
+{Kendall fell asleep.}
+
+\begin{figure}
+\[\mathrm{isAndSystem}(g, i_1, i_2) =
+\exists x \in \mathrm{strands}(g)\ .\ 
+\forall p \in \mathrm{parents}(x, g)\ .\ 
+\mathrm{requires}(p, i_1) \land \mathrm{requires}(p, i_2)\]
+\begin{align*}
+\mathrm{isOrSystem}(g, i_1, i_2) = & \ 
+\exists x \in \mathrm{strands}(g)\ .
+\\
+& \ (\exists p \in \mathrm{parents}(x)\ .\ 
+\mathrm{requires}(p, i_1) \land \lnot \mathrm{requires}(p, i_2))
+\\
+\land & \ 
+(\exists p \in \mathrm{parents}(x)\ .\ 
+\lnot \mathrm{requires}(p, i_1) \land \mathrm{requires}(p, i_2))
+\end{align*}
+\caption{
+First-order predicates over a reaction network
+$g$ given input strands $i_1$ and $i_2$.
+}
+\end{figure}
+
+\textcolor{red}{
+Needs some more flow/context, could be in this subsection,
+or in section 2 with less detail
+\\
 As we were working on writing the rule functions, we originally were
 verifying the rules through traditional \emph{ad hoc} testing. But,
 since we were working in Rosette, once synthax was defined for domain
@@ -174,10 +321,12 @@ these tests to be a very useful property of a solver-aided language;
 we were much more confident that the (complex) rule implementations
 were correct once we had verified them for small domain
 concatenations.
+}
+
 
 \section{Results}
 
-\textcolor{red}{How things actually turn out...}
+\textcolor{red}{Description of AND and OR gate synthesis, limitations, etc}
 
 \section{Teamwork}
 
