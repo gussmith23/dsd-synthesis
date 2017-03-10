@@ -5,19 +5,13 @@
 (provide
  ; Returns a dna struct that represents the input string.
  ; Will match the semantics of the string format as
- ;   described in "Abstractions for DNA circuit design".
+ ;   described in "Abstractions for DNA circuit design"
+ ;   with the exception that domain names can only be integers.
  ; The behavior is UNDEFINED on input that doesn't match the said string format.
  ; Mutates the given symbol-table (see parameters section for more info)
  ;
  ; -- Parameters --
  ; input - A string in the format mentioned above to turn into a dna struct.
- ; symbol-table - A mutable mapping from names that appear in the input to integers
- ;                  representing them.
- ;                If there isn't a mapping for a name, a mapping will be added
- ;                  such that the name will map to an integer that is unique from
- ;                  all the other integers mapped in the symbol-table.
- ;                By default uses a default global symbol table which is the same one
- ;                  that species->string uses
  string->species
          
  ; Returns a string that represents the input dna struct.
@@ -27,25 +21,13 @@
  ; -- Parameters --
  ; input - A valid dna struct representing the species to turn into a string.
  ;         Errors if not input isn't a valid dna struct
- ; symbol-table - A 1-1 mapping between friendly name strings to integers.
- ;                Every integer in input will be represented in the result
- ;                  as the friendly name string that maps to that integer.
- ;                Errors if an integer in input has no corresponding name.
- ;                By default uses the same default global symbol table as string->species.
  species->string
  system->dsd
  dsd->system
 )
 
-; The default symbol table used by string->species and species->string
-; These symbol tables map strings to integers
-; The strings are the friendly names and the integers are 
-(define default-symbol-table (make-hash))
-
-(define (species->string input [symbol-table default-symbol-table])
-  (define inverse-symbol-table (make-hasheq)) ; inverse hash table will let us lookup id to get pretty string
-  (define (lookup id) (hash-ref inverse-symbol-table id
-                                    (thunk (if (integer? id) (~a id) (error "Id not found:" id)))))
+(define (species->string input)
+  (define (lookup id) (~a id))
   (define (to-string input)
     (match input
       [(? union? input) "??"]
@@ -66,47 +48,36 @@
       [(gate:: g1 g2) (string-append (to-string g1) "::" (to-string g2))]
       [(list domains ...) (string-join (map to-string domains) " ")]
       [_ (lookup input)]))
-  (begin
-    (hash-for-each symbol-table
-                   (lambda (str id)
-                     (hash-set! inverse-symbol-table id str)))
-    (if (valid-dna-struct? input)
-        (to-string input)
-        (error "Given invalid dna-struct"))))
+  
+  (if (valid-dna-struct? input)
+      (to-string input)
+      (error "Given invalid dna-struct")))
 
-(define (string->species input [symbol-table default-symbol-table])
+(define (string->species input)
   (cond
     [(string-contains? input "::") ; upper strand gate concatenation
      (let ([split-result (string-split input "::")])
        (foldl (lambda (substring accumulator)
-                (gate:: accumulator (string->species substring symbol-table)))
-              (string->species (car split-result) symbol-table) (cdr split-result)))]
+                (gate:: accumulator (string->species substring)))
+              (string->species (car split-result)) (cdr split-result)))]
     [(string-contains? input ":") ; lower strand gate concatenation
      (let ([split-result (string-split input ":")])
        (foldl (lambda (substring accumulator)
-                (gate: accumulator (string->species substring symbol-table)))
-              (string->species (car split-result) symbol-table) (cdr split-result)))]
+                (gate: accumulator (string->species substring)))
+              (string->species (car split-result)) (cdr split-result)))]
     [(string-contains? input "[") ; indicates complex (gate)
-     (parse-gate-string input symbol-table)]
+     (parse-gate-string input)]
     [(string-contains? input "<") ; indicates upper strand
-     (parse-upper-strand-string input symbol-table)]
+     (parse-upper-strand-string input)]
     [(string-contains? input "{") ; indicates lower strand
-     (parse-lower-strand-string input symbol-table)]
+     (parse-lower-strand-string input)]
     ))
 
-(define (parse-sequence-string input symbol-table)
+(define (parse-sequence-string input)
   (let ([is-complement (string-contains? input "*")]
         [is-toehold (string-contains? input "^")]
         [name (string-trim input (regexp "\\*|\\^") #:repeat? #t)])
-    (define symbol
-      (if (hash-has-key? symbol-table name)
-          (hash-ref symbol-table name)
-          ; creates a new-id to be one higher than the max integer in the symbol-list
-          (let ([new-id (+ 1
-                           (argmax identity (cons -1 (hash-values symbol-table)))
-                           )])
-            (hash-set! symbol-table name new-id)
-            new-id)))
+    (define symbol (string->number name))
     (define inner-result (if is-toehold
                              (toehold symbol)
                              symbol))
@@ -115,33 +86,33 @@
         inner-result)
     ))
 
-(define (parse-domain-string input symbol-table)
+(define (parse-domain-string input)
   (filter
    (lambda (e) (not (null? e)))
    (map
     (lambda (input)
       (if (regexp-match (regexp "^\\?\\?$") input)
           (domain-hole)
-          (parse-sequence-string input symbol-table)))
+          (parse-sequence-string input)))
     (string-split input))))
 
-(define (parse-upper-strand-string input symbol-table)
-  (upper-strand (parse-domain-string (string-trim input (regexp "<|>")) symbol-table)))
+(define (parse-upper-strand-string input)
+  (upper-strand (parse-domain-string (string-trim input (regexp "<|>")))))
 
-(define (parse-lower-strand-string input symbol-table)
-  (lower-strand (parse-domain-string (string-trim input (regexp "{|}")) symbol-table)))
+(define (parse-lower-strand-string input)
+  (lower-strand (parse-domain-string (string-trim input (regexp "{|}")))))
 
-(define (parse-gate-string input symbol-table)
+(define (parse-gate-string input)
   (let* ([components (string-split input (regexp "\\[|\\]") #:trim? #f)]
          [left-side (list-ref components 0)]
          [complex (list-ref components 1)]
          [right-side (list-ref components 2)])
     (gate
-          (parse-upper-strand-string (car (or (regexp-match (regexp "<.*>") left-side) `(""))) symbol-table)
-          (parse-lower-strand-string (car (or (regexp-match (regexp "{.*}") left-side) `(""))) symbol-table)
-          (duplex-strand (parse-domain-string complex symbol-table))
-          (parse-lower-strand-string (car (or (regexp-match (regexp "{.*}") right-side) `(""))) symbol-table)
-          (parse-upper-strand-string (car (or (regexp-match (regexp "<.*>") right-side) `(""))) symbol-table)
+          (parse-upper-strand-string (car (or (regexp-match (regexp "<.*>") left-side) `(""))))
+          (parse-lower-strand-string (car (or (regexp-match (regexp "{.*}") left-side) `(""))))
+          (duplex-strand (parse-domain-string complex))
+          (parse-lower-strand-string (car (or (regexp-match (regexp "{.*}") right-side) `(""))))
+          (parse-upper-strand-string (car (or (regexp-match (regexp "<.*>") right-side) `(""))))
           )
     )
   )
