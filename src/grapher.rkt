@@ -3,7 +3,7 @@
 (require racket/draw)
 (require "dna-syntax.rkt" "strand-manipulation.rkt" "dna-string-parser.rkt" "interpreter.rkt")
 
-(provide get-dot-graph-string ; Returns dot graph string from given state struct s
+#;(provide get-dot-graph-string ; Returns dot graph string from given state struct s
          dot                  ; Sets the path given to it as the path to the dot executable
          dot-string->png      ; Takes a dot graph string and draws out the graph
          )
