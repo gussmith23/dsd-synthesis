@@ -192,30 +192,35 @@ Gate          & \verb;<1>{2^*}[3 4]{5}; &
 \subsection{Semantic Encoding}
 \subsubsection{Reduction Rules}
 DSD models the behavior of DNA strand displacement reactions with
-\emph{reduction rules}. Each rule is a pattern-based rewrite rule
-that models the conditions for and outcomes of a known reaction
+\emph{reduction rules}---pattern-based rewrite rules
+that model the conditions for and outcomes of a known reaction
 involving DNA molecules. Reduction rules are also associated with
-reaction rates, which model the kinetics of that chemical reaction.
+reaction rates, which model the kinetics of each chemical reaction.
 
 The DSD specification refers to the set of reduction rules being used
-as the level of \emph{semantic abstraction}, and they define four such levels.
-The more more refined levels
+as the level of \emph{semantic abstraction}, and defines four such levels.
+More refined levels
 use more rules, and produce more intermediate species. The
-coarser abstractions use fewer rules (and merge some rules together), thus
-eliding intermediate species.
+coarser abstractions use fewer rules (and merge some rules together) and
+elide intermediate species.
 
-Our encoding implements the coarsest level of semantic abstraction, which DSD
-refers to as the \emph{infinite} abstraction. This abstraction only has one
-rule, rule RP, which describes binding interactions between a strand and a gate
-that can potentially lead to a strand displacement reaction (where a strand is
+Our encoding implements the coarsest semantic abstraction level,
+the \emph{infinite} abstraction. This abstraction only has one
+rule (rule RP) which describes binding interactions between a strand and a gate
+that can lead to a strand displacement reaction (where a strand is
 released from the gate). The infinite abstraction also allows for the strand
-displacement reaction itself (which is specified by another reduction rule, RD)
-to be merged into the reaction.
-
-Rules RP and RD, and an outline of their merged encoding in Rosette are shown in
+displacement reaction itself (rule RD)
+to be merged into the RP reaction.
+Rules RP and RD, and an outline of their merged encoding in Rosette, are shown in
 Figure~\ref{figure:example-rule}. The outermost \verb;match*; expression
-performs a purely syntactic match to determine whether the species are
-of the correct type, and to bind their fields to variable names.
+performs a purely syntactic match to check whether the species have
+the correct type and bind their fields to variable names.
+The inner \verb;match; and \verb;cond;
+expressions discover if the domains of the input species satisfy
+the requirements of the rule. If so, the result is a \verb;reaction;,
+(a 4-tuple containing the input strand and gate, and the
+output strand and gate). The empty list represents a reaction that
+does not occur.
 
 \begin{figure}[h]
 
@@ -264,13 +269,6 @@ which represents a single toehold domain.
 }
 \label{figure:example-rule}
 \end{figure}
-
-The inner \verb;match; and \verb;cond;
-expressions discover whether the domains of the input species satisfy
-the requirements of the rule. If so, the result is a \verb;reaction;,
-which is a 4-tuple containing the input strand and gate, and the
-output strand and gate. The empty list is used in
-cases where a product is not produced.
 
 \subsubsection{Reaction Graphs}
 
