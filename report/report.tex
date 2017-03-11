@@ -288,9 +288,8 @@ The result of compiling the DSD program
 Our goal is to apply a first-order predicate such as Equation~\ref{eq:and-sys}
 to a reaction graph where the identity of one or more domains in the input
 species is left symbolic, and then ask a solver to find bindings for the
-symbolic variables such that the predicate is satisfied.
-
-However, as specified by DSD, compiling a reaction graph requires applying
+symbolic variables such that the predicate is satisfied. But,
+as specified by DSD, compiling a reaction graph requires applying
 reduction rules until no new species are generated; this poses a problem
 for symbolic execution, because the termination of this algorithm
 depends on the identity of the species, and termination cannot be
@@ -299,11 +298,10 @@ of the reaction graph by only considering a very small number of possible
 reactions: the reactions between the initial species, and between
 the products of those reactions and the initial species. The
 resulting reaction graph will have a concrete size for a given
-number of input strands and gates. Moreover, this finitization
-is sufficiently powerful to reason about small systems such as the one
+number of input strands and gates. This finitization
+is still powerful enough to reason about small systems such as the one
 depicted in Figure~\ref{figure:and-gate}, where all relevant reactions
-involve at least one of the input species and no relevant reaction
-involves only intermediate products.
+involve at least one of the input species.
 
 Since all reaction graphs are of a finite size and concrete shape,
 writing a predicate such as the one in Equation~\ref{eq:and-sys} is
@@ -312,7 +310,7 @@ existential quantification and \verb;andmap; for universal quantification.
 Applying this predicate to a reaction graph with symbolic inputs results
 in a formula that can be passed to Rosette's \verb;solve; procedure.
 Strictly speaking, this process is not inductive synthesis because it
-does not require universal quantification over inputs -- we are simply
+does not require universal quantification over inputs---we are simply
 asking the solver to fill in a finite number of domain "holes" such that the
 predicate is satisfied.
 
@@ -321,7 +319,7 @@ As we were working on writing reduction rules, we were originally
 checking our code with traditional \emph{ad hoc} testing. But,
 since we were working in Rosette, we were able to use the \verb;verify;
 form to check semantic properties of the rules and find bugs in the
-form of counterexamples.  These verified tests were also used as regression
+form of counterexamples. These verified tests were also used as regression
 tests, and run by our CI server on each commit to help ensure that our code
 stayed correct.
 
@@ -362,7 +360,7 @@ for special cases that are more efficient but harder to discover.
 \begin{table}
 \centering
 \begin{tabular}{|l|l|l|l|l|}\hline
-Sketch     &  Graph Size &  Predicate &  Result  & Total Time \\ \hline
+Sketch   & Graph Size & Predicate & Result & Total Time \\ \hline
 \begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
 (<?? ??>
 |<?? ??>
@@ -503,7 +501,7 @@ L. Qian, E. Winfree, and J. Bruck, “Neural network computation with DNA strand
 displacement cascades,” Nature, vol. 475, no. 7356, pp. 368–372, Jul. 2011.
 
 \bibitem{rosette}
-  E. Torlak and R. Bodik, “A lightweight symbolic virtual machine for solver-aided host languages,” Programming Language Design and Implementation (PLDI), vol. 49, no. 6, pp. 530-541, 2014.
+ E. Torlak and R. Bodik, “A lightweight symbolic virtual machine for solver-aided host languages,” Programming Language Design and Implementation (PLDI), vol. 49, no. 6, pp. 530-541, 2014.
 
 \bibitem{seelig}
 G. Seeling, ``Logic circuits with DNA
