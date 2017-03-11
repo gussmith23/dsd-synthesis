@@ -1,5 +1,7 @@
 #lang rosette/safe
 
+#|-----this module currently not in use-----|#
+
 ; This file serves as an example of how to use grapher.rkt
 
 (require "grapher.rkt" "dna-syntax.rkt" "interpreter.rkt")

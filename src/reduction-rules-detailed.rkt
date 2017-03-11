@@ -5,7 +5,10 @@
 (require "strand-manipulation.rkt")
 (require "reduction-rules.rkt")
 
-; provides (a subset of) DSD's "detailed" semantics
+; provides (a subset of) DSD's "detailed" semantics --
+; these were implemented early on but are not currently
+; used by our compilation algorithm.
+
 (provide
  ; unary rules:
  rule-ru

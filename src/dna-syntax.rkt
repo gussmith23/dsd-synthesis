@@ -100,7 +100,7 @@
    (toehold (choose* 5 6 7 8))
    (complement (toehold (choose* 5 6 7 8)))))
 
-
+; used in some tests, but not in final version
 (define-synthax (domain-cat-?? k)
   #:base
   '()

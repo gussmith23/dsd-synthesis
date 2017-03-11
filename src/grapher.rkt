@@ -1,5 +1,7 @@
 #lang rosette
 
+#|----this module currently not in use----|#
+
 (require racket/draw)
 (require "dna-syntax.rkt" "strand-manipulation.rkt" "dna-string-parser.rkt" "interpreter.rkt")
 
