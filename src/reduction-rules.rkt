@@ -15,7 +15,7 @@
  allow-unbindings!
  disallow-unbindings!
 
- toe-search ; for detailed semantics
+ toe-search
  )
 
 (define allow-unbindings #t)
