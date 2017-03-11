@@ -423,26 +423,31 @@ community.
 
 \section{Teamwork}
 
-To ensure that all three of us were involved in developing the encoding of
-strand displacement reactions we used, much of the core infrastuctural code
-that defines the encoding was developed by all three of us working on a single
-screen. Once we had defined the core encoding, each team member worked on
-making use of it in a particular way: Kendall, as the domain expert, worked
-on implementing the rules and refining the encoding to perform better; Anthony
-worked on building a implementing a normalization procedure (which required
-some modifications to the encoding, as well) and a pretty printer/parser;
-Martin created a test infrastructure (including a continuous integration server)
-and then on writing verification procedures for the rules Kendall was
-implementing (i.e. solver-aided exhaustive tests).
+Our initial meetings sketched out the architecture of the interpreter and our
+syntactic encoding, in which we all had an equal role. Subsequently we divided
+tasks amongst the team members: Kendall wrote the reduction rules, the graph
+compilation procedure, the semantic graph predicates, and the demo. Anthony
+wrote the DSD parser and pretty-printer, a reaction graph visualizer (for an
+early graph representation, now not used), and and also wrote procedures to
+manipulate species (rotation, complement, etc). These were intended to be
+part of a normalization procedure specified by DSD. This procedure did not end
+up being used in our final simplified algorithm, but could be useful in future
+work.  Martin focused on verification and testing of our code, including writing
+solver-aided unit tests and the deployment of a test infrastructure using
+continuous integration. Kendall and Martin wrote this report.
 
 \section{Course Topics}
 
-This project made heavy use of a solver-aided language: it is entirely dependent
-on Rosette. In particular, we needed Rosette's ability to angelically execute
-our symbolic programs (which represent reactions) and produce reactants that
-cause the programs (reactions) to have the desired behavior---our synthesis
-task. We also used bounded verification to test that our more complex
-rules were correct. All topics we required were covered by the class.
+This project is built on top of Rosette, a solver-aided language, and makes
+use of Rosette's ability to perform angelic execution and bounded verification.
+In particular, the symbolic holes in the input species are angelic choices,
+and the verified tests check whether a property is valid by checking if its
+negation is unsatisfiable. We did not encounter any roadblocks that could
+not be answered by course material, and in fact the lecture on Rosette
+preciptiated some useful insights for how to make the symbolic execution
+efficient (e.g., try to ensure that objects on the heap rarely change their
+shape).
+
 
 \begin{thebibliography}{9}
 
