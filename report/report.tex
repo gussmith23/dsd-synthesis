@@ -309,15 +309,12 @@ a set of slides by UW CSE Professor Georg Seelig \cite{seelig}.
 The results of these queries are shown in Table~\ref{table:results}.
 The solver performs as expected on the AND gate: the reaction network
 graph of the result is identical to the hand-designed AND gate.
-The OR gate on its original sketch is more interesting.
-The solver discovers a gate series of gates with holes,
-which can be arbitrarily filled---allowing the solver to make
-the second gate in the result identical to the first.
-Thus, the solver has
-discovered a simpler solution than the human-designed one.
-The solver finds an even simpler solution if asked
-if the smaller sketch can implement an OR gate.
+The OR gate on its original sketch is more interesting:
+the solution has holes, which allows two of the gates to be collapsed
+into one. 
 
+An even simpler solution is found if we ask the solver
+to implement an OR gate with the smaller sketch intended for the AND gate.
 The hand-designed OR gate from Professor Seelig's slides is actually a motif
 that allows for potentially unbounded fan-in; however, the solver
 finds an OR gate that is optimized for just two inputs. This
