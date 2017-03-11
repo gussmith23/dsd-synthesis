@@ -247,14 +247,13 @@ outputs to the inputs.
 This graph
 and its properties constitute the \emph{meaning} of a DSD program.
 The reactions and their corresponding weights can be used to simulate
-the progress of the system over time. At a coarser level of abstraction,
-if we ignore rates, the structure of the graph can tell us whether or not
-it is capable of carrying a particular meaning. The reaction
+the progress of the system over time. At a coarser level of abstraction
+(i.e. ignoring rates) the structure of the graph encodes whether or not
+it can have a particular meaning. The reaction
 graph for a system representing an AND gate is shown in
 Figure~\ref{figure:and-gate}. This system represents an AND gate
 because all reactions that produce the strand \verb;<2 3>;
 require (either directly or indirectly) both of the inputs.
-
 We can write this requirement as a predicate in first-order logic, as
 follows. Given a reaction graph $g$, and input strands $i_1$ and $i_2$:
 \begin{equation}
