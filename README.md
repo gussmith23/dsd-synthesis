@@ -17,6 +17,10 @@ This project also contains a demo. The demo is located in [`src/demo.rkt`](https
 
 To try out the demo, call `solve-system` on one of the predicates and one of the sketches, like this: `(solve-system and-system? sketch-1)`. That call will produce a gate that has the same semantics as the human-designed AND gate.
 
+To test programs in the "real" DSD, go to [http://dsd.azurewebsites.net](
+http://dsd.azurewebsites.net) (requires MS Silverlight).
+
+
 ## References
 - Background information on DNA strand displacement
   - [Scaling Up Digital Circuit Computation with DNA Strand Displacement Cascades (Qian, Winfree)](http://science.sciencemag.org/content/332/6034/1196/tab-pdf)
