@@ -302,7 +302,7 @@ We tested our system with two sketches and predicates: isAndSystem
 (Equation~\ref{eq:and-sys}) and isOrSystem. isOrSystem
 requires the graph to have an output
 with at least two parent reactions, each of which exclusively
-require one of the inputs. A system satisfying this prediate creates the output
+require one of the inputs. A system satisfying this predicate creates the output
 if either input is present.
 The sketches are inspired by the structure of
 known AND and OR gates. The known AND gate is shown in
@@ -418,7 +418,7 @@ cost function to help guide the search.
 We believe the first step towards publishing this work would be to
 consult a domain scientist that works with DNA strand displacement,
 and have them provide a motivating and interesting problem to work
-towards (moreso than the toy AND and OR gates explored here). 
+towards (more so than the toy AND and OR gates explored here).
 If this tool can solve problems that domain scientists find difficult
 to reason about, it could have quite an impact in the DNA computing
 community.
@@ -430,7 +430,7 @@ syntactic encoding, in which we all had an equal role. Subsequently we divided
 tasks amongst the team members: Kendall wrote the reduction rules, the graph
 compilation procedure, the semantic graph predicates, and the demo. Anthony
 wrote the DSD parser and pretty-printer, a reaction graph visualizer (for an
-early graph representation, now not used), and and also wrote procedures to
+early graph representation, now not used), and also wrote procedures to
 manipulate species (rotation, complement, etc). These were intended to be
 part of a normalization procedure specified by DSD. This procedure did not end
 up being used in our final simplified algorithm, but could be useful in future
@@ -446,7 +446,7 @@ In particular, the symbolic holes in the input species are angelic choices,
 and the verified tests check whether a property is valid by checking if its
 negation is unsatisfiable. We did not encounter any roadblocks that could
 not be answered by course material, and in fact the lecture on Rosette
-preciptiated some useful insights for how to make the symbolic execution
+precipitated some useful insights for how to make the symbolic execution
 efficient (e.g., try to ensure that objects on the heap rarely change their
 shape).
 
