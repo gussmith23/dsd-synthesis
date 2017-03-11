@@ -313,13 +313,14 @@ The results of these queries are shown in Table~\ref{table:results}.
 The solver performs as expected on the AND gate: the resulting reaction graph
 is nearly identical to the hand-designed AND gate (except that solver decided
 to use the same domain twice for the output rather than two different domains).
-The OR gate on its original sketch is more interesting: the solution has holes,
-which allows two of the gates to be collapsed into one.
-An even simpler solution is found if we ask the solver
-to implement an OR gate with the smaller sketch intended for the AND gate.
-The hand-designed OR gate from Professor Seelig's slides is actually a motif
-that allows for potentially unbounded fan-in; however, the solver
-finds an OR gate that is optimized for just two inputs. This
+Running the OR predicate on its original sketch produces a solution with holes,
+and manual pruning usually allows one or more of the
+gates to be eliminated.
+A simpler (and consistent) solution is found if we ask the solver
+to implement an OR gate with the smaller sketch.
+Where the hand-designed OR gate from Professor Seelig's slides is actually a
+motif that allows for potentially unbounded fan-in, the solver-created
+OR gate is optimized for just two inputs. This
 is an encouraging result: while abstract motifs are easier for
 humans to reason about, a solver may find optimizations
 for special cases that are more efficient but harder to discover.
@@ -398,7 +399,9 @@ isAndSystem
 290 seconds
 \\ \hline
 \end{tabular}
-\caption{Summary of results for two sketches and predicates.}
+\caption{Summary of results for two sketches and predicates.
+Note: the solution for isOrSystem on the larger sketch is one of
+many possible solutions.}
 \label{table:results}
 \end{table}
 
