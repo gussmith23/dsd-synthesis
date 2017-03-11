@@ -193,31 +193,25 @@ output strand and gate). The empty list represents a reaction that
 does not occur.
 
 \begin{figure}[h]
-
-\begin{subfigure}[c]{0.5\textwidth}
+\centering
+\begin{subfigure}[c]{0.35\textwidth}
 \includegraphics[width=\textwidth]{figures/rule-merge.png}
 \end{subfigure}
 ~
 \begin{subfigure}[c]{0.5\textwidth}
-\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily]
 (define (rule-rp strand-in gate-in)
   (match* (strand-in gate-in)
     [ ((upper-strand upper)
-
        (gate
-        (upper-strand left-upper)
-        (lower-strand left-lower)
+        (upper-strand left-upper) (lower-strand left-lower)
         (duplex-strand duplex)
-        (lower-strand right-lower)
-        (upper-strand right-upper)))
+        (lower-strand right-lower) (upper-strand right-upper)))
 
       (match (toehold-search upper left-lower)
-        ; no matching toehold, no reaction
-        [ '() (reaction strand-in gate-in '() '()) ]
-
+        ...
         ; matching toeholds
         [ (list ...)
-
           ; conditional merge with other rules
           (cond
             ...
