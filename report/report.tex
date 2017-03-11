@@ -441,9 +441,28 @@ isOrSystem
 \label{table:results}
 \end{table}
 
-\subsection{Limitations}
+\subsection{Limitations and Future Work}
+The extreme finitization of the compilation process limits the complexity
+of the reaction networks our system can reason about. The core problem is
+that we must consider all possible interactions between all possible
+intermediate products which grows exponentially with the number of steps away
+from the initial species. We believe a possible solution to this problem
+is a domain-specific structuring of the search space (a la metasketches
+\cite{metasketches}), to prioritize portions that are more likely to be
+fruitful.
 
-\subsection{Future Work}
+Moreover, our abstraction is extremely coarse, which means that the
+solutions the solver generates may be fairly weak from a domain scientist's
+point of view. Metasketches could again help here by providing a domain-specific
+cost function to help guide the search.
+
+We believe the first step towards publishing this work would be to
+consult a domain scientist that works with DNA strand displacement,
+and have them provide a motivating and interesting problem to work
+towards (moreso than the toy AND and OR gates explored here). 
+If this tool can solve problems that domain scientists find difficult
+to reason about, it could have quite an impact in the DNA computing
+community.
 
 \section{Teamwork}
 
@@ -496,6 +515,10 @@ displacement cascades,” Nature, vol. 475, no. 7356, pp. 368–372, Jul. 2011.
 G. Seeling, ``Logic circuits with DNA
 strand displacement". Slides for CSE590: Molecular Programming and
 Neural Computation. Presented Jan 24th, 2014.
+
+\bibitem{metasketches}
+J. Bornholt, E. Torlak, D. Grossman, and L. Ceze, “Optimizing Synthesis with
+Metasketches,” POPL, 2016.
 
 \end{thebibliography}
 
