@@ -40,17 +40,10 @@ by hand, but recent work has advanced DNA strand displacement reactions as a
 primitive for DNA computation, because they can implement a wide
 range of algorithms and devices, including boolean circuits~\cite{strands},
 oscillators~\cite{dsd}, and neural networks~\cite{strandnn}.
+However, strand displacement circuits can be difficult to reason
+to reason about.
 
-Because of their boolean completeness, strand displacement reactions are
-theoretically capable of implementing binary arithmetic operations. However,
-some operations (such as multiplication) require a large number of
-boolean gates, and strand-based boolean gates do not scale as well as
-silicon-based gates; even moderately-sized systems begin to suffer noise
-from unwanted interactions. Strand displacement reactions are capable
-of more than just boolean
-logic, so an arithmetic operation can be implemented with a set of
-fewer, more complex strand displacement gates. However, reasoning about the
-behavior of complex reactions is difficult for humans.
+\section{Overview of Our Approach}
 
 A formal semantics for strand displacement reactions is provided in the
 description of DSD~\cite{dsd}, a programming language for specifying and
@@ -66,36 +59,12 @@ particular meaning. For instance, if all paths leading to a product include both
 initial species $A$ and initial species $B$, the product could
 represent $A \land B$.
 
-\section{Overview of Our Approach}
-
-We implemented an interpreter for the semantics of
-DSD in Rosette~\cite{rosette}. By writing predicates
-over the graph structure (in Rosette), we can ask
-the solver to provide DNA structures that implement
-interesting gates. For instance, we can ask the solver ``given
-reactant $A$ and reactant $B$, find a system of gates where the
-product represents $A \land B$". The solver is able to solve this
-query and generate a gate that is semantically equivalent to
-the best human design. We also synthesized an OR gate that
-is simpler than the state-of-the-art human design while
-retaining the semantics of OR.
-
-The primary contributions of our work are:
-\begin{enumerate}
-\item
-  An implementation in Rosette of both the detailed
-  and infinite semantics for DSD, as an interpreter for
-  strand displacement reactions.
-
-\item
-  An evaluation of this interpreter's usefulness for synthesizing
-  implementations of simple boolean circuits as strand displacement
-  reactions.
-
-\item
-  A novel OR gate that is specialized to two-input reactions and
-  is dramatically smaller than existing human designs.
-\end{enumerate}
+We implemented an interpreter for the semantics of DSD in
+Rosette~\cite{rosette}. By writing predicates over the graph structure, we can
+ask the solver to find DSD programs where the outputs have a particular meaning.
+Our tool is able to able to discover a system representing an AND gate that is
+equivalent to one designed by hand, and it is also able to discover a system
+representing an OR gate that is much smaller than a common hand-designed system.
 
 \section{Algorithms and Encodings}
 
@@ -135,7 +104,7 @@ tagged with the type (upper, lower, or double-stranded). Gates
 are a five-tuple of their constituent strands.
 Example syntactic encodings are shown in Table~\ref{table:encoding-example}.
 
-\begin{table}
+\begin{table}[h]
 \begin{tabular}{|l|l|l|} \hline
 Construct     & DSD Syntax    & Encoding                      \\ \hline
 Long Domain   & \verb;0;      & \verb;0;                      \\ \hline
