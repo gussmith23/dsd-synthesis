@@ -59,12 +59,13 @@ particular meaning. For instance, if all paths leading to a product include both
 initial species $A$ and initial species $B$, the product could
 represent $A \land B$.
 
-We implemented an interpreter for the semantics of DSD in
-Rosette~\cite{rosette}. By writing predicates over the graph structure, we can
-ask the solver to find DSD programs where the outputs have a particular meaning.
-Our tool is able to able to discover a system representing an AND gate that is
-equivalent to one designed by hand, and it is also able to discover a system
-representing an OR gate that is much smaller than a common hand-designed system.
+We have implemented an interpreter for the semantics of DSD in
+Rosette~\cite{rosette}. By writing predicates over reaction graphs, we can ask
+Rosette's solver to fill in symbolic holes in DSD programs such that the outputs
+have a particular meaning.  Our tool is able to able to discover a system
+representing an AND gate that is equivalent to one designed by hand, and it is
+also able to discover a system representing an OR gate that is smaller than a
+common hand-designed system.
 
 \section{Algorithms and Encodings}
 
@@ -105,6 +106,7 @@ are a five-tuple of their constituent strands.
 Example syntactic encodings are shown in Table~\ref{table:encoding-example}.
 
 \begin{table}[h]
+\centering
 \begin{tabular}{|l|l|l|} \hline
 Construct     & DSD Syntax    & Encoding                      \\ \hline
 Long Domain   & \verb;0;      & \verb;0;                      \\ \hline
@@ -140,8 +142,8 @@ The DSD specification refers to the set of reduction rules being used
 as the level of \emph{semantic abstraction}, and defines four such levels.
 More refined levels
 use more rules, and produce more intermediate species. The
-coarser abstractions use fewer rules (and merge some rules together) and
-elide intermediate species.
+coarser abstractions use fewer rules (and merge some rules together),
+thus eliding intermediate species.
 
 Our encoding implements the coarsest semantic abstraction level,
 the \emph{infinite} abstraction. This abstraction only has one
@@ -156,10 +158,11 @@ performs a purely syntactic match to check whether the species have
 the correct type and bind their fields to variable names.
 The inner \verb;match; and \verb;cond;
 expressions discover if the domains of the input species satisfy
-the requirements of the rule. If so, the result is a \verb;reaction;,
+the requirements of the rule. The result is a \verb;reaction;,
 (a 4-tuple containing the input strand and gate, and the
-output strand and gate). The empty list represents a reaction that
-does not occur.
+output strand and gate). The empty list in either output indicates
+that the reaction does not produce that output; if the empty list
+is in both outputs, it means that no reaction occurs.
 
 \begin{figure}[h]
 \centering
@@ -256,20 +259,20 @@ The result of compiling the DSD program
 Our goal is to apply a first-order predicate such as Equation~\ref{eq:and-sys}
 to a reaction graph where the identity of one or more domains in the input
 species is left symbolic, and then ask a solver to find bindings for the
-symbolic variables such that the predicate is satisfied. But,
+symbolic variables such that the predicate is satisfied. However,
 to compile a reaction graph, DSD requires applying
 reduction rules until no new species are generated; this poses a problem
 for symbolic execution, because the termination of this algorithm
 depends on the identity of the species, and termination cannot be
 predicated on symbolic values. Therefore, we finitize the computation
-of the reaction graph by only considering a very small number of possible
+of the reaction graph by only considering a small number of possible
 reactions: the reactions between the initial species, and between
 the products of those reactions and the initial species. The
 resulting reaction graph will have a concrete size for a given
 number of input strands and gates. This finitization
 is still powerful enough to reason about small systems such as the one
-depicted in Figure~\ref{figure:and-gate}, where all relevant reactions
-involve at least one of the input species.
+depicted in Figure~\ref{figure:and-gate}, where no reactions on the
+paths to the output are only between intermediate species.
 
 Since all reaction graphs are of a finite size and concrete shape,
 writing a predicate such as the one in Equation~\ref{eq:and-sys} is
@@ -277,7 +280,7 @@ simple: sets are represented as lists, and we use Rosette's \verb;ormap; for
 existential quantification and \verb;andmap; for universal quantification.
 Applying this predicate to a reaction graph with symbolic inputs results
 in a formula that can be passed to Rosette's \verb;solve; procedure.
-Strictly speaking, this process is not inductive synthesis because it
+Strictly speaking, this process is not inductive synthesis, because it
 does not require universal quantification over inputs---we are simply
 asking the solver to fill in a finite number of domain ``holes" such that the
 predicate is satisfied.
@@ -295,38 +298,37 @@ stayed correct.
 
 \subsection{Case Study: AND and OR gates}
 
-We tested our system with two sketches and predicates: isAndSystem 
+We tested our system with two sketches and predicates: isAndSystem
 (Equation~\ref{eq:and-sys}) and isOrSystem. isOrSystem
 requires the graph to have an output
-with two parent reactions each of which exclusively
-require one of the inputs. This creates the output
-if either input is present---the semantics of an OR gate.
+with at least two parent reactions, each of which exclusively
+require one of the inputs. A system satisfying this prediate creates the output
+if either input is present.
 The sketches are inspired by the structure of
 known AND and OR gates. The known AND gate is shown in
 Figure~\ref{figure:and-gate}. The known OR gate is from
 a set of slides by UW CSE Professor Georg Seelig \cite{seelig}.
 
 The results of these queries are shown in Table~\ref{table:results}.
-The solver performs as expected on the AND gate: the reaction network
-graph of the result is identical to the hand-designed AND gate.
-The OR gate on its original sketch is more interesting:
-the solution has holes, which allows two of the gates to be collapsed
-into one. 
-
+The solver performs as expected on the AND gate: the resulting reaction graph
+is nearly identical to the hand-designed AND gate (except that solver decided
+to use the same domain twice for the output rather than two different domains).
+The OR gate on its original sketch is more interesting: the solution has holes,
+which allows two of the gates to be collapsed into one.
 An even simpler solution is found if we ask the solver
 to implement an OR gate with the smaller sketch intended for the AND gate.
 The hand-designed OR gate from Professor Seelig's slides is actually a motif
 that allows for potentially unbounded fan-in; however, the solver
 finds an OR gate that is optimized for just two inputs. This
 is an encouraging result: while abstract motifs are easier for
-humans to reason about, a solver can find optimizations
+humans to reason about, a solver may find optimizations
 for special cases that are more efficient but harder to discover.
 
 \begin{table}
 \centering
 \begin{tabular}{|l|l|l|l|l|}\hline
 Sketch   & Graph Size & Predicate & Result & Total Time \\ \hline
-\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily]
 (<?? ??>
 |<?? ??>
 |{??}[?? ??]{??}
@@ -337,7 +339,7 @@ Sketch   & Graph Size & Predicate & Result & Total Time \\ \hline
 &
 isAndSystem
 &
-\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily]
 (<5^ 2>
 |<2 5^>
 |{5^*}[2 2]{5^*}
@@ -352,7 +354,7 @@ isAndSystem
 &
 isOrSystem
 &
-\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily]
 (<8^ 7^>
 |<7^ 8^>
 |{7^*}[8^ 8^]{7^*}
@@ -361,7 +363,7 @@ isOrSystem
 &
 3.4 seconds
 \\ \hline
-\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily]
 (<?? ?? ?? ??>
 |<?? ?? ?? ??>
 |{??}[?? ??]<?? ??>
@@ -374,7 +376,7 @@ isOrSystem
 &
 isOrSystem
 &
-\begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily]
 (<7^ ?? 5^ 5^>
 |<?? 5^ 6^ ??>
 |{5^*}[6^ 6^]<5^ ??^>
